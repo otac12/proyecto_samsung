@@ -3,7 +3,7 @@ from time import sleep
 
 print("Se movera motor")
 
-myCorrection=0.45
+myCorrection=0.47
 maxPW=(2.0+myCorrection)/1000
 minPW=(1.0-myCorrection)/1000
 
