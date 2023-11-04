@@ -1,9 +1,9 @@
-from gpiozero import servo
+from gpiozero import Servo
 from time import sleep
 
 print("Se movera motor")
 
-servo= servo(17)
+servo= Servo(17)
 
 servo.value=0
 
