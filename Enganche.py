@@ -3,11 +3,7 @@ from time import sleep
 
 print("Se movera motor")
 
-myCorrection=0.47
-maxPW=(2.0+myCorrection)/1000
-minPW=(1.0-myCorrection)/1000
-
-servo= AngularServo(17,min_pulse_width=minPW,max_pulse_width=maxPW)
+servo= AngularServo(17,min_angle=-90, max_angle=90)
 
 print("Max:"+ str(maxPW)+"\n min:"+ str(minPW))
 
