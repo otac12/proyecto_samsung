@@ -5,16 +5,16 @@ print("Se movera motor")
 
 servo= Servo(17)
 
-servo.value=0
+servo.value=1.5
 
 while (True):
     respuesta=input("Cerrar o abrir")
 
     if respuesta=="Cerrar":
-        servo.value=180/180
+        servo.value=2
     
     if respuesta=="abrir":
-        servo.value=0
+        servo.value=1.5
 
 
 
