@@ -1,21 +1,17 @@
-from gpiozero import Servo
+
+from gpiozero import AngularServo
 from time import sleep
 
-print("Se movera motor")
+servo = AngularServo(17, min_angle=0, max_angle=-90)
 
-servo= Servo(17, min_pulse_width=0.5, max_pulse_width=2.5)
-
-servo.value=-1
-
-while (True):
-    respuesta=input("Cerrar o abrir")
-
-    if respuesta=="Cerrar":
-        servo.value=1
-    
-    if respuesta=="abrir":
-        servo.value=0
-
-
+while True:
+    servo.angle = 0
+    sleep(2)
+    servo.angle = 90
+    sleep(2)
+    servo.angle = 180
+    sleep(2)
+    servo.angle = -90
+    sleep(2)
 
 
