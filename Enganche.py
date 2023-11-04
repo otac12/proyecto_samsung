@@ -5,8 +5,6 @@ print("Se movera motor")
 
 servo= AngularServo(17,min_angle=-90, max_angle=90)
 
-print("Max:"+ str(maxPW)+"\n min:"+ str(minPW))
-
 servo.angle=0
 
 while (True):
