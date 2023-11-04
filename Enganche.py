@@ -3,7 +3,7 @@ from time import sleep
 
 print("Se movera motor")
 
-servo= Servo(17, min_pulse_width=1.0, max_pulse_width=2.0)
+servo= Servo(17, min_pulse_width=0.5, max_pulse_width=2.5)
 
 servo.value=-1
 
