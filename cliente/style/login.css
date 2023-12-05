@@ -1,0 +1,95 @@
+
+body{
+    background-image: url("../recursos/fondo.png");
+    background-repeat: no-repeat;
+    background-size: cover;  
+    background-position: center;
+    margin: 0;
+    width: 100%;
+    min-height: 100vh;
+}
+
+#login{
+    background: white;
+    border-radius: 10px;
+    margin-left: 30%;
+    margin-right: 25.5%;
+    margin-top: 23.5vh;
+    margin-bottom: 23.5vh;
+    position: absolute;
+    width: 40%;
+    height: 50vh;
+    
+}
+
+#bolita{
+    width: 22%;
+    height: 25%;
+    background-color: white;
+    border-radius: 50% 50% 0% 0%;
+    margin-left: 40%;
+    top: -10%;
+    position: absolute;
+}
+
+img{
+    width: 44%;
+    height: 25%;
+    top: -5%;
+    margin-left:29% ;
+    position: absolute;
+}
+
+input{
+    width: 80%;
+    height: 10%;
+    border-radius: 10px;
+    border:2px solid #cccccc;
+    position: relative;
+    margin-left:8%;
+    margin-bottom: 3%;
+    font-size: 15px;
+    font-family: roboto_regular;
+    margin-top: 0%;
+    top: 13vh;
+}
+
+p{  
+    width: 80%;
+    height: 5%;
+    margin-left: 8%;
+    margin-top: 0%;
+    position: relative;
+    font-size: 20px;
+    margin-bottom: 2%;
+    top: 25%;
+    font-family: roboto_regular;
+}
+
+button{
+    position: relative;
+    width: 20%;
+    height: 11%;
+    margin-left: 41%;
+    background-color: #51bfa6;
+    color: white;
+    border-radius: 10px;
+    border: 0px solid;
+    top: 13vh;
+}
+
+a{
+    position: relative;
+    text-align: center;
+    display: block;
+    width: 40%;
+    top: 15vh;
+    margin-left: 30%;
+    font-size: 12px;
+}
+
+@font-face {
+    font-family: 'roboto_regular';
+    src: url('../font/Roboto/Roboto-Regular.ttf') format('truetype');
+
+} 

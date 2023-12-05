@@ -1,0 +1,20 @@
+body{
+    background-image: url("../recursos/fondo.png");
+    background-repeat: no-repeat;
+    background-size: cover;  
+    background-position: center;
+    margin: 0;
+    width: 100%;
+    min-height: 100vh;
+}
+
+#registro{
+    background-color: white;
+    border-radius: 20px;
+    width: 40%;
+    height: 75vh;
+    margin-left: 30%;
+    top: 12.5vh;
+    position: relative;
+}
+
