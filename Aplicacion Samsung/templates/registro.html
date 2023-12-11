@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/registro.css') }}" type="text/css">
+</head>
+<body>
+    <div id="registro">
+        <div id="bolita"></div>
+        <img src="{{ url_for('static', filename='img/logo.png') }}">
+        <form id="registroForm">
+            <p>Nombre Completo</p>
+            <input type="text" name="nombre" placeholder="Ingrese su nombre completo" required>
+            
+            <p>Email</p>
+            <input type="email" name="correo" placeholder="Ingrese su email" required>
+            
+            <p>Contraseña</p>
+            <input type="password" name="contrasena" placeholder="Ingrese su contraseña" required>
+            
+            <p>Confirmar Contraseña</p>
+            <input type="password" name="confirmar_contrasena" placeholder="Confirme su contraseña" required>
+            
+            <button type="submit">Registrar</button>
+        </form>
+        <a href="{{ url_for('login') }}">¿Ya tienes cuenta? Inicia sesión</a>
+    </div>
+    <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
+</body>
+</html>
