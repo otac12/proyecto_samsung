@@ -8,13 +8,13 @@
     <div id="login">
         <div id="bolita"></div>
         <img src="{{ url_for('static', filename='img/logo.png') }}">
-        <form action="{{ url_for('login') }}" method="post">
+        <!--<form action="{{ url_for('login') }}" method="post">-->
             <p>Email</p>
             <input type="email" name="email" placeholder="Ingresar tu email" required>
             <p>Contraseña</p>
             <input type="password" name="password" placeholder="Ingresar tu contraseña" required>
             <button type="submit">Ingresar</button>
-        </form>
+       <!-- </form>--> 
         <a href="{{ url_for('registro') }}">¿No tienes cuenta? Regístrate</a>
     </div>
 

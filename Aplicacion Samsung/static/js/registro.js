@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Obtener formulario de registro
-    var formulario = document.getElementById('registroForm');
+    //var formulario = document.getElementById('registroForm');
+    var formulario = document.getElementById('login');
 
     formulario.addEventListener('submit', function(e) {
         e.preventDefault();
