@@ -31,8 +31,10 @@ def registro():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        correo = request.form['email']
-        contrasena_formulario = request.form['password']
+        data = request.get_json()
+        correo = data['correo']
+        contrasena_formulario = data['contrasena']
+        
         # Obtener los resultados como diccionario
         cursor = mysql.connection.cursor(cursorclass=DictCursor)
         cursor.execute("SELECT * FROM usuario WHERE Correo = %s", (correo,))
@@ -42,10 +44,9 @@ def login():
         # Verificar la contraseña haseada e iniciar sesión
         if usuario and check_password_hash(usuario['Contrasena'], contrasena_formulario):
             session['nombre_usuario'] = usuario['Nombre']
-            flash('Has iniciado sesión correctamente', 'success')
-            return redirect(url_for('principal'))
+            return jsonify({"estado": "Login exitoso", "mensaje": "Inicio de sesión exitoso"})
         else:
-            flash('Correo o contraseña incorrectos', 'danger')
+            return jsonify({"estado": "Error", "mensaje": "Correo o contraseña incorrectos"}), 401
     
     return render_template('login.html')
 
