@@ -1,11 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    var formularioLogin = document.getElementById('loginForm');
-    formularioLogin.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        var correo = document.querySelector('input[name="email"]').value;
-        var contrasena = document.querySelector('input[name="password"]').value;
+    var botonLogin = document.getElementById('loginBoton');
+    
+    botonLogin.addEventListener('click', function(e) {
+        var correo = document.getElementById('correo').value;
+        var contrasena = document.getElementById('contrasena').value;
 
         // Datos del formulario para enviarlos como JSON.
         var datosLogin = {
