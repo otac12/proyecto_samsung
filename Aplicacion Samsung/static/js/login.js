@@ -35,12 +35,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (datos.estado === 'Login exitoso') {
                 var minutos=30;
                 var expiracion = new Date();
-                expiracion.getTime(expiracion.getTime+(minutos*1000))
+                expiracion.setTime(expiracion.getTime+(minutos*1000))
 
                 //se crea la cockie con un tiempoo de vida de 30 min
 
-                var cockie = "usuario = " + datos.usuario+ "; expires=" + expiracion.toUTCString() + "; path=/";
+                var cockie = "usuario = " + datos.usuario+ "; expires=" + expiracion.toUTCString();
                 document.cookie = cockie;
+                console.log("Se creo galleta");
+                console.log(cockie);
 
                 window.location.href = '/main';
             } else {

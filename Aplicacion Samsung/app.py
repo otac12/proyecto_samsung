@@ -87,6 +87,29 @@ def principal():
     else:
         flash('Por favor, inicia sesión para continuar', 'danger')
         return redirect(url_for('index'))  # Redirige a la página de inicio de sesión
+    
+# Enviar los lugares en donde hay estaciones
+@app.route('/estaciones')
+def estaciones():
+    if 'nombre_usuario' in session:
+        cursor = mysql.connection.cursor(cursorclass=DictCursor)  # Asegúrate de usar DictCursor aquí
+        cursor.execute("SELECT Localizacion, Lugares_ocupados, Lugares_disponibles FROM estaciones")
+        estaciones_raw = cursor.fetchall()
+        cursor.close()
+        
+        estaciones = []
+        for estacion in estaciones_raw:
+            total_lugares = estacion['Lugares_ocupados'] + estacion['Lugares_disponibles']
+            estaciones.append({
+                'Localizacion': estacion['Localizacion'],
+                'Lugares_ocupados': estacion['Lugares_ocupados'],
+                'Lugares_disponibles': estacion['Lugares_disponibles'],
+                'Total_lugares': total_lugares
+            })
+        
+        return jsonify(estaciones)
+    else:
+        return jsonify({"error": "Usuario no encontrado"}), 401
 
 if __name__ == '__main__':
     app.run(debug=True)
