@@ -33,7 +33,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(datos => {
             // Procesa los datos de respuesta.
             if (datos.estado === 'Login exitoso') {
-                // Si el inicio de sesión es exitoso, redirige al usuario a '/main'.
+                var minutos=30;
+                var expiracion = new Date();
+                expiracion.getTime(expiracion.getTime+(minutos*1000))
+
+                //se crea la cockie con un tiempoo de vida de 30 min
+
+                var cockie = "usuario = " + datos.usuario;
+
                 window.location.href = '/main';
             } else {
                 alert(datos.mensaje);

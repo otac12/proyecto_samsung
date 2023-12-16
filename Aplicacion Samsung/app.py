@@ -75,7 +75,7 @@ def register():
         cur.execute("INSERT INTO usuario (Nombre, Correo, Contrasena) VALUES (%s, %s, %s)", (nombre, correo, contrasena_hash))
         mysql.connection.commit()
         cur.close()
-        return jsonify({"estado": "Registro exitoso"}), 201
+        return jsonify({"estado": "Registro exitoso","usuario": nombre}), 201
     except Exception as e:
         print(e)
         return jsonify({"estado": "Error", "mensaje": str(e)}), 500   
