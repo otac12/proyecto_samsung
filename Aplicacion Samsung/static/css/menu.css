@@ -1,0 +1,39 @@
+body{
+    margin: 0;
+    position: absolute;
+    width: 100%;
+    min-height: 100vh;
+    display: inline-block; 
+}
+
+#dashboard{
+    background: #F5F9F8;
+    margin-top: 0%;
+    margin-left: 0%;
+    position: relative;
+    width: 75%;
+    height: 100vh;
+    float: left;
+}
+
+#banner{
+    background-image: url("../img/Banner.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    margin-top: 0%;
+    margin-left: 75%;
+    position: relative;
+    width: 25%;
+    height: 100vh;
+}
+
+#mapa{
+    background: rgb(93, 15, 15);
+    margin-top: 2%;
+    margin-left: 2%;
+    margin-bottom: 2%;
+    position: relative;
+    width: 25%;
+    height: 96vh;
+}
