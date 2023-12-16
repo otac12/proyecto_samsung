@@ -77,10 +77,10 @@ body{
     height: 17.5%;
 }
 
-#letrero{
-    margin: 0; 
-    padding: 10px;
-    position: relative;
+#localidad>p{
+    margin: 0;
+    padding: 2%;
+    position: fixed;
 }
 
 @font-face {
