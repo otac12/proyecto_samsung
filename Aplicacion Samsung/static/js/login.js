@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 //se crea la cockie con un tiempoo de vida de 30 min
 
                 var cockie = "usuario = " + datos.usuario+ "; expires=" + expiracion.toUTCString() + "; path=/";
+                document.cookie = cockie;
 
                 window.location.href = '/main';
             } else {
