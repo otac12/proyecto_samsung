@@ -143,6 +143,7 @@ def horaInicio():
         return jsonify({"error": "Usuario no encontrado"}), 401
     
 # Enviar hora periodicamente
+@app.route('/enviar_hora', methods = ['POST'])
 def obtenerHoraPerdiodicamente():   
     try:
         horaActual = datetime.now()
