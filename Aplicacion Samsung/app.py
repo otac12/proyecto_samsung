@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, url_for, redirect, s
 from flask_mysqldb import MySQL
 from MySQLdb.cursors import DictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 import yaml
 import re
 
@@ -92,7 +93,7 @@ def principal():
 @app.route('/estaciones')
 def estaciones():
     if 'nombre_usuario' in session:
-        cursor = mysql.connection.cursor(cursorclass=DictCursor)  # Asegúrate de usar DictCursor aquí
+        cursor = mysql.connection.cursor(cursorclass=DictCursor)  
         cursor.execute("SELECT Localizacion, Lugares_ocupados, Lugares_disponibles FROM estaciones")
         estaciones_raw = cursor.fetchall()
         cursor.close()
@@ -110,6 +111,78 @@ def estaciones():
         return jsonify(estaciones)
     else:
         return jsonify({"error": "Usuario no encontrado"}), 401
+    
+# Enviar Hora de Inicio 
+@app.route('/guardar_hora_inicio', methods = ['POST'])
+def horaInicio():
+    if 'nombre_usuario' in session:
+        
+        try:          
+            # Obtener la hora actual
+            horaActual = datetime.now()
+            # Pasar la hora a String
+            horaFormato = horaActual.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Agregar la hora a la base de datos
+            cursor = mysql.connection.cursor(cursorclass=DictCursor)  
+            cursor.execute("INSERT INTO servicio (Tiempo_inicio) VALUES (%s)", (horaFormato,))
+            mysql.connection.commit()
+            cursor.close()
+            
+            return jsonify({"estado": "Exito", "mensaje": "Hora de inicio guardada correctamente"}), 200
+        
+        except Exception as e:
+            cursor = mysql.connection.cursor(cursorclass=DictCursor)
+            cursor.execute("INSER INTO servicio (Alerta) VALUES (1)")   # ERROR: Error al no obtener la hora de inicio
+            mysql.connection.commit()
+            cursor.close()
+            
+            return jsonify({"estado": "Fallido", "mensaje": "Fallo la Hora de inicio"}), 200
+        
+    else:
+        return jsonify({"error": "Usuario no encontrado"}), 401
+    
+# Enviar hora periodicamente
+def obtenerHoraPerdiodicamente():   
+    try:
+        horaActual = datetime.now()
+    except Exception as e:
+        cursor = mysql.connection.cursor(cursorclass=DictCursor)
+        cursor.execute("INSER INTO servicio (Alerta) VALUES (1)")   # ERROR: Error al no obtener la hora periodicamente
+        mysql.connection.commit()
+        cursor.close()
+        
+# Enviar Hora de Final
+@app.route('/guardar_hora_Final', methods = ['POST'])
+def horaFinal():
+    if 'nombre_usuario' in session:
+        
+        try:          
+            # Obtener la hora actual
+            horaActual = datetime.now()
+            # Pasar la hora a String
+            horaFormato = horaActual.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Agregar la hora a la base de datos
+            cursor = mysql.connection.cursor(cursorclass=DictCursor)  
+            cursor.execute("INSERT INTO servicio (Tiempo_final) VALUES (%s)", (horaFormato,))
+            mysql.connection.commit()
+            cursor.close()
+            
+            return jsonify({"estado": "Exito", "mensaje": "Hora de final guardada correctamente"}), 200
+        except Exception as e:
+            cursor = mysql.connection.cursor(cursorclass=DictCursor)
+            cursor.execute("INSER INTO servicio (Alerta) VALUES (1)")   # ERROR: Error al no obtener la hora de inicio
+            mysql.connection.commit()
+            cursor.close()
+            
+            return jsonify({"estado": "Fallido", "mensaje": "Fallo al guardar hora final"}), 200
+        
+    else:
+        return jsonify({"error": "Usuario no encontrado"}), 401
+                     
 
+        
+# Correr el programa
 if __name__ == '__main__':
     app.run(debug=True)
