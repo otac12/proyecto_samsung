@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, url_for, redirect, s
 from flask_mysqldb import MySQL
 from MySQLdb.cursors import DictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import yaml
 import re
 
@@ -112,78 +112,51 @@ def estaciones():
     else:
         return jsonify({"error": "Usuario no encontrado"}), 401
     
-# Enviar Hora de Inicio 
-@app.route('/guardar_hora_inicio', methods = ['POST'])
-def horaInicio():
+# Obtener las horas de Inicio y Final
+@app.route('/iniciar_contadora', methods=['POST'])
+def iniciar_contador():
     if 'nombre_usuario' in session:
+        duracion = request.json.get('duracion', 0)  # Duración en minutos
+        tiempo_inicio = datetime.now()
+        tiempo_final = tiempo_inicio + timedelta(minutes=duracion)
         
-        try:          
-            # Obtener la hora actual
-            horaActual = datetime.now()
-            # Pasar la hora a String
-            horaFormato = horaActual.strftime('%Y-%m-%d %H:%M:%S')
-            
-            # Agregar la hora a la base de datos
-            cursor = mysql.connection.cursor(cursorclass=DictCursor)  
-            cursor.execute("INSERT INTO servicio (Tiempo_inicio) VALUES (%s)", (horaFormato,))
+        try:
+            #Guardar la hora de inicio y la hora final en la base de datos
+            cursor = mysql.connection.cursor()
+            cursor.execute(
+                "INSERT INTO servicio (Usuario, Tiempo_inicio, Tiempo_final) VALUES (%s, %s, %s)",
+                (session['id_usuario'], tiempo_inicio, tiempo_final))
             mysql.connection.commit()
             cursor.close()
             
-            return jsonify({"estado": "Exito", "mensaje": "Hora de inicio guardada correctamente"}), 200
-        
+            return jsonify({"estado": "Exito", "mensaje": "Contador iniciado correctamente", "tiempo_final": tiempo_final.strftime('%Y-%m-%d %H:%M:%S')}), 200
         except Exception as e:
-            cursor = mysql.connection.cursor(cursorclass=DictCursor)
-            cursor.execute("INSER INTO servicio (Alerta) VALUES (1)")   # ERROR: Error al no obtener la hora de inicio
-            mysql.connection.commit()
-            cursor.close()
-            
-            return jsonify({"estado": "Fallido", "mensaje": "Fallo la Hora de inicio"}), 200
-        
+            return jsonify({"estado": "Error", "mensaje": str(e)}), 500
     else:
-        return jsonify({"error": "Usuario no encontrado"}), 401
+        return jsonify({"error": "Usuario no autenticado"}), 401
     
-# Enviar hora periodicamente
-@app.route('/enviar_hora', methods = ['POST'])
-def obtenerHoraPerdiodicamente():   
-    try:
-        horaActual = datetime.now()
-    except Exception as e:
-        cursor = mysql.connection.cursor(cursorclass=DictCursor)
-        cursor.execute("INSER INTO servicio (Alerta) VALUES (1)")   # ERROR: Error al no obtener la hora periodicamente
-        mysql.connection.commit()
-        cursor.close()
-        
-# Enviar Hora de Final
-@app.route('/guardar_hora_Final', methods = ['POST'])
-def horaFinal():
+# Obtener la hora final guardada en la base de datos
+def obtener_tiempo_final():
     if 'nombre_usuario' in session:
-        
-        try:          
-            # Obtener la hora actual
-            horaActual = datetime.now()
-            # Pasar la hora a String
-            horaFormato = horaActual.strftime('%Y-%m-%d %H:%M:%S')
-            
-            # Agregar la hora a la base de datos
-            cursor = mysql.connection.cursor(cursorclass=DictCursor)  
-            cursor.execute("INSERT INTO servicio (Tiempo_final) VALUES (%s)", (horaFormato,))
-            mysql.connection.commit()
+        try:
+            # Obtener la hora final desde la base de datos
+            cursor = mysql.connection.cursor()
+            cursor.execute("SELECT Tiempo_final FROM servicio WHERE Usuario = %s ORDER BY ID DESC LIMIT 1",
+                           (session['id_usuario'],))
+            data = cursor.fetchone()
             cursor.close()
-            
-            return jsonify({"estado": "Exito", "mensaje": "Hora de final guardada correctamente"}), 200
-        except Exception as e:
-            cursor = mysql.connection.cursor(cursorclass=DictCursor)
-            cursor.execute("INSER INTO servicio (Alerta) VALUES (1)")   # ERROR: Error al no obtener la hora de inicio
-            mysql.connection.commit()
-            cursor.close()
-            
-            return jsonify({"estado": "Fallido", "mensaje": "Fallo al guardar hora final"}), 200
-        
-    else:
-        return jsonify({"error": "Usuario no encontrado"}), 401
-                     
 
-        
+            if data:
+                tiempo_final = data['Tiempo_final']
+                return jsonify({"tiempo_final": tiempo_final.strftime('%Y-%m-%d %H:%M:%S')}), 200
+            else:
+                return jsonify({"estado": "Error", "mensaje": "No hay contador activo"}), 404
+        except Exception as e:
+            return jsonify({"estado": "Error", "mensaje": str(e)}), 500
+    else:
+      return jsonify({"error": "Usuario no autenticado"}), 401
+               
+       
 # Correr el programa
 if __name__ == '__main__':
     app.run(debug=True)
