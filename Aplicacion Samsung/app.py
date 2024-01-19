@@ -3,14 +3,22 @@ from flask_mysqldb import MySQL
 from MySQLdb.cursors import DictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from flask_socketio import SocketIO, emit
+from flask_redis import FlaskRedis
 import yaml
 import re
 
 app = Flask(__name__)
+# Configuración de Flask-SocketIO
+socketio = SocketIO(app)
+# Configuración de Redis
+app.config['REDIS_URL'] = "redis://localhost:6379/0"
+redis_client = FlaskRedis(app)
+
 # Configuración de la clave secreta
 app.secret_key = 'tu_secret_key_aleatoria'
 
-# Configuración de la base de datos (se yusar el archivo yaml)
+# Configuración de la base de datos (se usa el archivo yaml)
 db = yaml.safe_load(open('db.yaml'))
 app.config['MYSQL_HOST'] = db['mysql_host']
 app.config['MYSQL_USER'] = db['mysql_user']
@@ -112,16 +120,50 @@ def estaciones():
     else:
         return jsonify({"error": "Usuario no encontrado"}), 401
     
-# Obtener las horas de Inicio y Final
-@app.route('/iniciar_contadora', methods=['POST'])
-def iniciar_contador():
+# Guardar las horas de inicio y final para iniciar el contador utilizando SocketIO
+@socketio.on('iniciar_contador')
+def iniciar_contador(json):
     if 'nombre_usuario' in session:
-        duracion = request.json.get('duracion', 0)  # Duración en minutos
+        duracion = json['duracion']
+        tiempo_inicio = datetime.now()
+        tiempo_final = tiempo_inicio + timedelta(minutes=duracion)
+        session['tiempo_final'] = tiempo_final.strftime('%Y-%m-%d %H:%M:%S')
+        
+        try:
+            # Guardar la hora de inicio y la hora final en la base de datos
+            cursor = mysql.connection.cursor()
+            cursor.execute(
+                "INSERT INTO servicio (Usuario, Tiempo_inicio, Tiempo_final) VALUES (%s, %s, %s)",
+                (session['nombre_usuario'], tiempo_inicio, tiempo_final))
+            mysql.connection.commit()
+            cursor.close()
+
+            # Almacenar tiempo final en Redis
+            redis_client.set('tiempo_final_{}'.format(session['nombre_usuario']), session['tiempo_final'])
+            
+            emit('actualizar_contador', {'tiempo_final': session['tiempo_final']})
+        except Exception as e:
+            emit('error', {'mensaje': str(e)})
+            
+@socketio.on('verificar_estado_contador')
+def verificar_estado_contador():
+    if 'nombre_usuario' in session:
+        tiempo_final = redis_client.get('tiempo_final_{}'.format(session['nombre_usuario']))
+        if tiempo_final:
+            emit('actualizar_contador', {'tiempo_final': tiempo_final.decode('utf-8')})
+        else:
+            emit('error', {'mensaje': "No hay contador activo"})
+
+""""
+@socketio.on('iniciar_contador')
+def iniciar_contador(json):
+    if 'nombre_usuario' in session:
+        duracion = json['duracion']
         tiempo_inicio = datetime.now()
         tiempo_final = tiempo_inicio + timedelta(minutes=duracion)
         
         try:
-            #Guardar la hora de inicio y la hora final en la base de datos
+            # Guardar la hora de inicio y la hora final en la base de datos
             cursor = mysql.connection.cursor()
             cursor.execute(
                 "INSERT INTO servicio (Usuario, Tiempo_inicio, Tiempo_final) VALUES (%s, %s, %s)",
@@ -129,14 +171,18 @@ def iniciar_contador():
             mysql.connection.commit()
             cursor.close()
             
-            return jsonify({"estado": "Exito", "mensaje": "Contador iniciado correctamente", "tiempo_final": tiempo_final.strftime('%Y-%m-%d %H:%M:%S')}), 200
+            # Dar la respuesta al cliente con el tiempo final
+            emit('actualizar_contador', {'tiempo_final': tiempo_final.strftime('%Y-%m-%d %H:%M:%S')})
+
         except Exception as e:
             return jsonify({"estado": "Error", "mensaje": str(e)}), 500
     else:
-        return jsonify({"error": "Usuario no autenticado"}), 401
+        emit('error', {'mensaje': "Usuario no autenticado"})
     
-# Obtener la hora final guardada en la base de datos
-def obtener_tiempo_final():
+# Verificar el estado del contador utilizando SocketIO
+@socketio.on('verificar_estado_contador')
+def verificar_estado_contador():
+    # Obteniendo el tiempo final de la base de datos
     if 'nombre_usuario' in session:
         try:
             # Obtener la hora final desde la base de datos
@@ -148,15 +194,17 @@ def obtener_tiempo_final():
 
             if data:
                 tiempo_final = data['Tiempo_final']
-                return jsonify({"tiempo_final": tiempo_final.strftime('%Y-%m-%d %H:%M:%S')}), 200
+                emit('actualizar_contador', {'tiempo_final': tiempo_final.strftime('%Y-%m-%d %H:%M:%S')})
             else:
                 return jsonify({"estado": "Error", "mensaje": "No hay contador activo"}), 404
         except Exception as e:
             return jsonify({"estado": "Error", "mensaje": str(e)}), 500
     else:
       return jsonify({"error": "Usuario no autenticado"}), 401
-               
+
+
+"""
        
 # Correr el programa
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)
