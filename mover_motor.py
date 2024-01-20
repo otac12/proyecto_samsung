@@ -16,7 +16,7 @@ while True:
 
     elif accion== "cerrar":
         print("se abrio el scooter")
-        servo.value=-1
+        servo.value=1
     else:
 
         print("no se encuentra la acción")
