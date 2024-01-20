@@ -10,7 +10,8 @@ servo.value=0.4
 
 while True:
 
-    accion=input("Ingrese su accion")
+    if final.when_pressed:
+        print("se presiono")
 
     if accion== "cerrar":
         print("se cerro el scooter")
