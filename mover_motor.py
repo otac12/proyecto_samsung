@@ -17,15 +17,15 @@ final.whenpressed = final
 
 while True:
    
-   accion=input("Ingresa la accion: ")
-
-   if accion== "cerrar":
+    accion = input("Ingresa la accion: ")
+    
+    if accion== "cerrar":
         print("se cerro el scooter")
         servo.value=-1
 
     elif accion== "abrir":
         print("se abrio el scooter")
         servo.value=0.4
-    else:
 
+    else:
         print("no se encuentra la acción")
