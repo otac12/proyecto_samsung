@@ -12,7 +12,7 @@ while True:
 
     if accion== "abrir":
         print("se cerror el scooter")
-        servo.value=0
+        servo.value=-1
 
     elif accion== "cerrar":
         print("se abrio el scooter")
