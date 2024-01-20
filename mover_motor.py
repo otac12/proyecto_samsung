@@ -12,6 +12,7 @@ while True:
 
     if final.when_pressed:
         print("se presiono")
+        accion=="cerrar"
 
     if accion== "cerrar":
         print("se cerro el scooter")
