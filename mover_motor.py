@@ -10,13 +10,14 @@ servo.value=0.4
 
 accion= "abrir"
 
+def final():
+    print("Final de carrera alcanzado.")
+
+final.whenpressed = final
+
 while True:
 
-    if final.when_pressed:
-        print("se presiono")
-        accion=="cerrar"
-
-    """if accion== "cerrar":
+   ''' if accion== "cerrar":
         print("se cerro el scooter")
         servo.value=-1
 
@@ -25,7 +26,7 @@ while True:
         servo.value=0.4
     else:
 
-        print("no se encuentra la acción")"""
+        print("no se encuentra la acción")'''
     
 
 
