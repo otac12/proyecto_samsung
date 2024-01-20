@@ -8,6 +8,8 @@ final=Button(pinfinal)
 
 servo.value=0.4
 
+accion= "abrir"
+
 while True:
 
     if final.when_pressed:
