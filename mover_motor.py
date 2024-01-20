@@ -4,17 +4,17 @@ pin = 22
 
 servo= Servo(pin)
 
-servo.value=-1
+servo.value=1
 
 while True:
 
     accion=input("Ingrese su accion")
 
-    if accion== "cerrar":
+    if accion== "abrir":
         print("se cerror el scooter")
         servo.value=0
 
-    elif accion== "abrir":
+    elif accion== "cerrar":
         print("se abrio el scooter")
         servo.value=-1
     else:
