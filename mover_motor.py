@@ -1,10 +1,12 @@
-from gpiozero import Servo
+from gpiozero import Servo,Button
 
 pin = 22
+pinfinal = 27
 
 servo= Servo(pin)
+final=Button(pinfinal)
 
-servo.value=1
+servo.value=0.7
 
 while True:
 
@@ -16,7 +18,7 @@ while True:
 
     elif accion== "abrir":
         print("se abrio el scooter")
-        servo.value=1
+        servo.value=0.7
     else:
 
         print("no se encuentra la acción")
