@@ -119,7 +119,9 @@ def estaciones():
         return jsonify(estaciones)
     else:
         return jsonify({"error": "Usuario no encontrado"}), 401
-    
+
+### EN EL CASO EN DONDE SE UTILICE LA SELECCIÓN DE LA HORA EN LA QUE SE TERMINA
+
 # Guardar las horas de inicio y final para iniciar el contador utilizando SocketIO
 @socketio.on('iniciar_contador')
 def iniciar_contador(json):
@@ -130,11 +132,15 @@ def iniciar_contador(json):
         session['tiempo_final'] = tiempo_final.strftime('%Y-%m-%d %H:%M:%S')
         
         try:
+            # Obtener el ID del usuario a partir del nombre de usuario en la sesión
+            cursor = mysql.connection.cursor(cursorclass=DictCursor)
+            cursor.execute("SELECT ID FROM usuario WHERE Nombre = %s", (session['nombre_usuario'],))
+            usuario_id = cursor.fetchone()['ID']
+           
             # Guardar la hora de inicio y la hora final en la base de datos
-            cursor = mysql.connection.cursor()
             cursor.execute(
-                "INSERT INTO servicio (Usuario, Tiempo_inicio, Tiempo_final) VALUES (%s, %s, %s)",
-                (session['nombre_usuario'], tiempo_inicio, tiempo_final))
+                "INSERT INTO servicio (Tiempo_inicio, Tiempo_final, Usuario) VALUES (%s, %s, %s)",
+                (tiempo_inicio, tiempo_final, usuario_id))
             mysql.connection.commit()
             cursor.close()
 
@@ -153,58 +159,81 @@ def verificar_estado_contador():
             emit('actualizar_contador', {'tiempo_final': tiempo_final.decode('utf-8')})
         else:
             emit('error', {'mensaje': "No hay contador activo"})
+            
+            
+            
+### EN CASO DE QUE NO SE SELECCIONE CUANTO TIEMPO QUIERE ESTAR
 
-""""
-@socketio.on('iniciar_contador')
-def iniciar_contador(json):
+# Obtener hora de inicio
+@socketio.on('obtener_inicio')
+def obtener_inicio():
     if 'nombre_usuario' in session:
-        duracion = json['duracion']
         tiempo_inicio = datetime.now()
-        tiempo_final = tiempo_inicio + timedelta(minutes=duracion)
         
+        # Guardar el tiempo de inicio
         try:
+            # Obtener el ID del usuario a partir del nombre de usuario en la sesión
+            cursor = mysql.connection.cursor(cursorclass=DictCursor)
+            cursor.execute("SELECT ID FROM usuario WHERE Nombre = %s", (session['nombre_usuario'],))
+            usuario_id = cursor.fetchone()['ID']
+           
             # Guardar la hora de inicio y la hora final en la base de datos
-            cursor = mysql.connection.cursor()
             cursor.execute(
-                "INSERT INTO servicio (Usuario, Tiempo_inicio, Tiempo_final) VALUES (%s, %s, %s)",
-                (session['id_usuario'], tiempo_inicio, tiempo_final))
+                "INSERT INTO servicio (Tiempo_inicio, Usuario) VALUES (%s, %s)",
+                (tiempo_inicio, usuario_id))
             mysql.connection.commit()
             cursor.close()
             
-            # Dar la respuesta al cliente con el tiempo final
-            emit('actualizar_contador', {'tiempo_final': tiempo_final.strftime('%Y-%m-%d %H:%M:%S')})
-
+            # Guarda el ID del servicio en la sesión para usarlo más tarde
+            session['id_servicio'] = cursor.lastrowid
+            emit('contador_iniciado', {'tiempo_inicial': tiempo_inicio.strftime('%Y-%m-%d %H:%M:%S')})
         except Exception as e:
-            return jsonify({"estado": "Error", "mensaje": str(e)}), 500
-    else:
-        emit('error', {'mensaje': "Usuario no autenticado"})
-    
-# Verificar el estado del contador utilizando SocketIO
-@socketio.on('verificar_estado_contador')
-def verificar_estado_contador():
-    # Obteniendo el tiempo final de la base de datos
-    if 'nombre_usuario' in session:
+            emit('error', {'mensaje': str(e)})
+            
+# Finalizar contador
+@socketio.on('finalizar_contador')
+def finalizar_contador():
+    if 'nombre_usuario' in session and 'id_servicio' in session:
+        tiempo_final = datetime.now()
+        id_servicio = session['id_servicio']
+        
         try:
-            # Obtener la hora final desde la base de datos
-            cursor = mysql.connection.cursor()
-            cursor.execute("SELECT Tiempo_final FROM servicio WHERE Usuario = %s ORDER BY ID DESC LIMIT 1",
-                           (session['id_usuario'],))
-            data = cursor.fetchone()
+            cursor = mysql.connection.cursor(cursorclass=DictCursor)
+            cursor.execute(
+                "UPDATE servicio SET Tiempo_final = %s WHERE ID = %s",
+                (tiempo_final, id_servicio))
+            mysql.connection.commit()
             cursor.close()
-
-            if data:
-                tiempo_final = data['Tiempo_final']
-                emit('actualizar_contador', {'tiempo_final': tiempo_final.strftime('%Y-%m-%d %H:%M:%S')})
-            else:
-                return jsonify({"estado": "Error", "mensaje": "No hay contador activo"}), 404
+            emit('contador_finalizado', {'tiempo_finalizado': tiempo_final.strftime('%Y-%m-%d %H:%M:%S')})
         except Exception as e:
-            return jsonify({"estado": "Error", "mensaje": str(e)}), 500
-    else:
-      return jsonify({"error": "Usuario no autenticado"}), 401
+            emit('error', {'mensaje': str(e)})
+            
+@socketio.on('cargar_estado_contador')
+def cargar_estado_contador():
+    if 'nombre_usuario' in session:
+        # Obtener el ID del usuario a partir del nombre de usuario en la sesión
+        try:
+            cursor = mysql.connection.cursor(cursorclass=DictCursor)
+            cursor.execute("SELECT ID FROM usuario WHERE Nombre = %s", (session['nombre_usuario'],))
+            usuario = cursor.fetchone()
 
+            if usuario:
+                usuario_id = usuario['ID']
+                cursor.execute("SELECT ID, Tiempo_inicio FROM servicio WHERE Usuario = %s AND Tiempo_final IS NULL ORDER BY ID DESC LIMIT 1", (usuario_id,))
+                servicio = cursor.fetchone()
+                cursor.close()
 
-"""
-       
+                if servicio:
+                    # Guardar el id_servicio en la sesión para futuras referencias
+                    session['id_servicio'] = servicio['ID']
+                    emit('actualizar_tiempo', {'tiempo_inicio': servicio['Tiempo_inicio'].strftime('%Y-%m-%d %H:%M:%S')})
+                else:
+                    emit('error', {'mensaje': "No se encontró un contador activo para el usuario."})
+            else:
+                emit('error', {'mensaje': "No se encontró el usuario en la sesión."})
+        except Exception as e:
+            emit('error', {'mensaje': str(e)})
+
 # Correr el programa
 if __name__ == '__main__':
     socketio.run(app, debug=True)
