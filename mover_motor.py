@@ -6,7 +6,7 @@ pinfinal = 27
 servo= Servo(pin)
 final=Button(pinfinal)
 
-servo.value=0.7
+servo.value=0.6
 
 while True:
 
@@ -18,7 +18,7 @@ while True:
 
     elif accion== "abrir":
         print("se abrio el scooter")
-        servo.value=0.7
+        servo.value=0.6
     else:
 
         print("no se encuentra la acción")
