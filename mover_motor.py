@@ -10,11 +10,11 @@ while True:
 
     accion=input("Ingrese su accion")
 
-    if accion== "abrir":
-        print("se cerror el scooter")
+    if accion== "cerrar":
+        print("se cerro el scooter")
         servo.value=-1
 
-    elif accion== "cerrar":
+    elif accion== "abrir":
         print("se abrio el scooter")
         servo.value=1
     else:
