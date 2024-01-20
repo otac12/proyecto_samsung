@@ -1,4 +1,4 @@
-from gpiozero import servo
+from gpiozero import Servo
 
 pin = 22
 
