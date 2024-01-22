@@ -52,7 +52,7 @@ def login():
         
         # Verificar la contraseña haseada e iniciar sesión
         if usuario and check_password_hash(usuario['Contrasena'], contrasena_formulario):
-            session['nombre_usuario'] = usuario['Nombre']
+            session['usuario_id'] = usuario['ID']
             return jsonify({"estado": "Login exitoso", "mensaje": "Inicio de sesión exitoso","usuario": usuario['Nombre']})
         else:
             return jsonify({"estado": "Error", "mensaje": "Correo o contraseña incorrectos"}), 401
@@ -92,7 +92,7 @@ def register():
 @app.route('/main')
 def principal():
     if 'nombre_usuario' in session:
-        return render_template('main.html')
+        return render_template('main.html')     # CAMBIAR ESTE POR menu.hmtl
     else:
         flash('Por favor, inicia sesión para continuar', 'danger')
         return redirect(url_for('index'))  # Redirige a la página de inicio de sesión
@@ -100,7 +100,7 @@ def principal():
 # Enviar los lugares en donde hay estaciones
 @app.route('/estaciones')
 def estaciones():
-    if 'nombre_usuario' in session:
+    if 'usuario_id' in session:
         cursor = mysql.connection.cursor(cursorclass=DictCursor)  
         cursor.execute("SELECT Localizacion, Lugares_ocupados, Lugares_disponibles FROM estaciones")
         estaciones_raw = cursor.fetchall()
@@ -121,6 +121,8 @@ def estaciones():
         return jsonify({"error": "Usuario no encontrado"}), 401
 
 ### EN EL CASO EN DONDE SE UTILICE LA SELECCIÓN DE LA HORA EN LA QUE SE TERMINA
+
+"""
 
 # Guardar las horas de inicio y final para iniciar el contador utilizando SocketIO
 @socketio.on('iniciar_contador')
@@ -160,79 +162,61 @@ def verificar_estado_contador():
         else:
             emit('error', {'mensaje': "No hay contador activo"})
             
-            
+ 
+"""           
             
 ### EN CASO DE QUE NO SE SELECCIONE CUANTO TIEMPO QUIERE ESTAR
 
 # Obtener hora de inicio
 @socketio.on('obtener_inicio')
 def obtener_inicio():
-    if 'nombre_usuario' in session:
+    if 'usuario_id' in session:
         tiempo_inicio = datetime.now()
-        
-        # Guardar el tiempo de inicio
+
+        # Guardar el tiempo de inicio en Redis
+        redis_client.set(f"contador:{session['usuario_id']}", tiempo_inicio.isoformat())
+
         try:
-            # Obtener el ID del usuario a partir del nombre de usuario en la sesión
+            # Guardar el tiempo de inicio en MySQL
             cursor = mysql.connection.cursor(cursorclass=DictCursor)
-            cursor.execute("SELECT ID FROM usuario WHERE Nombre = %s", (session['nombre_usuario'],))
-            usuario_id = cursor.fetchone()['ID']
-           
-            # Guardar la hora de inicio y la hora final en la base de datos
             cursor.execute(
-                "INSERT INTO servicio (Tiempo_inicio, Usuario) VALUES (%s, %s)",
-                (tiempo_inicio, usuario_id))
+                "INSERT INTO servicio (Usuario, Tiempo_inicio) VALUES (%s, %s)",
+                (session['usuario_id'], tiempo_inicio))
             mysql.connection.commit()
-            cursor.close()
-            
-            # Guarda el ID del servicio en la sesión para usarlo más tarde
             session['id_servicio'] = cursor.lastrowid
-            emit('contador_iniciado', {'tiempo_inicial': tiempo_inicio.strftime('%Y-%m-%d %H:%M:%S')})
+            cursor.close()
+            emit('contador_iniciado', {'tiempo_inicial': tiempo_inicio.isoformat()})
         except Exception as e:
             emit('error', {'mensaje': str(e)})
             
-# Finalizar contador
 @socketio.on('finalizar_contador')
 def finalizar_contador():
-    if 'nombre_usuario' in session and 'id_servicio' in session:
+    if 'usuario_id' in session and 'id_servicio' in session:
         tiempo_final = datetime.now()
-        id_servicio = session['id_servicio']
-        
+
+        # Eliminar el estado del contador de Redis
+        redis_client.delete(f"contador:{session['usuario_id']}")
+
         try:
+            # Guardar el tiempo final en MySQL
             cursor = mysql.connection.cursor(cursorclass=DictCursor)
             cursor.execute(
                 "UPDATE servicio SET Tiempo_final = %s WHERE ID = %s",
-                (tiempo_final, id_servicio))
+                (tiempo_final, session['id_servicio']))
             mysql.connection.commit()
             cursor.close()
-            emit('contador_finalizado', {'tiempo_finalizado': tiempo_final.strftime('%Y-%m-%d %H:%M:%S')})
+            emit('contador_finalizado', {'tiempo_finalizado': tiempo_final.isoformat()})
         except Exception as e:
             emit('error', {'mensaje': str(e)})
             
 @socketio.on('cargar_estado_contador')
 def cargar_estado_contador():
-    if 'nombre_usuario' in session:
-        # Obtener el ID del usuario a partir del nombre de usuario en la sesión
-        try:
-            cursor = mysql.connection.cursor(cursorclass=DictCursor)
-            cursor.execute("SELECT ID FROM usuario WHERE Nombre = %s", (session['nombre_usuario'],))
-            usuario = cursor.fetchone()
-
-            if usuario:
-                usuario_id = usuario['ID']
-                cursor.execute("SELECT ID, Tiempo_inicio FROM servicio WHERE Usuario = %s AND Tiempo_final IS NULL ORDER BY ID DESC LIMIT 1", (usuario_id,))
-                servicio = cursor.fetchone()
-                cursor.close()
-
-                if servicio:
-                    # Guardar el id_servicio en la sesión para futuras referencias
-                    session['id_servicio'] = servicio['ID']
-                    emit('actualizar_tiempo', {'tiempo_inicio': servicio['Tiempo_inicio'].strftime('%Y-%m-%d %H:%M:%S')})
-                else:
-                    emit('error', {'mensaje': "No se encontró un contador activo para el usuario."})
-            else:
-                emit('error', {'mensaje': "No se encontró el usuario en la sesión."})
-        except Exception as e:
-            emit('error', {'mensaje': str(e)})
+    if 'usuario_id' in session:
+        tiempo_inicio = redis_client.get(f"contador:{session['usuario_id']}")
+        if tiempo_inicio:
+            emit('actualizar_tiempo', {'tiempo_inicio': tiempo_inicio.decode('utf-8')})
+        else:
+            emit('error', {'mensaje': "No se encontró un contador activo para el usuario."})
 
 # Correr el programa
 if __name__ == '__main__':
