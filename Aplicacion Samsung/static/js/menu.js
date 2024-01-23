@@ -61,6 +61,41 @@ let contadorActivo = false;
 let contadorInterval;
 let tiempoFinal;
 
+// Event listener para el botón de inicio del contador
+document.getElementById('BtnIniciar').addEventListener('click', function() {
+    if (!contadorActivo) {
+        // Cuando el contador está inactivo y se quiere iniciar
+        enviarAccion('abrir');
+        socket.emit('obtener_inicio');
+    } else if (contadorActivo && this.textContent === 'Finalizar') {
+        // Cuando el contador está activo y se quiere finalizar
+        enviarAccion('cerrar');
+        socket.emit('finalizar_contador');
+    } else if (this.textContent === 'Pagar') {
+        // Cuando se ha finalizado el contador y se quiere pagar
+        resetearContador();
+        enviarAccion('abrir'); // Enviar abrir cuando se quiere reiniciar después de pagar
+    }
+});
+
+// Función para enviar la acción 'abrir' o 'cerrar' al servidor
+function enviarAccion(accion) {
+    fetch('/accion_contador', {
+        method: 'POST',
+        body: new URLSearchParams({ 'accion': accion }),
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Acción enviada:', data);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
 // Escuchar el evento contador_iniciado
 socket.on('contador_iniciado', function(data) {
     contadorActivo = true;
@@ -70,9 +105,8 @@ socket.on('contador_iniciado', function(data) {
 
 // Escuchar el evento contador_finalizado
 socket.on('contador_finalizado', function(data) {
-    console.log('Contador finalizado recibido:', data);
     contadorActivo = false;
-    tiempoFinal = new Date(data.tiempo_finalizado).getTime();
+    tiempoFinal = new Date(data.tiempo_final_servidor).getTime();
     toggleContadorButton('Pagar');
     mantenerTiempoFinal();
 });
@@ -83,30 +117,21 @@ socket.on('error', function(data) {
     alert('Error: ' + data.mensaje);
 });
 
-// Event listener para el botón de inicio del contador
-document.getElementById('BtnIniciar').addEventListener('click', function() {
-    const btnContador = document.getElementById('BtnIniciar');
-    if (!contadorActivo) {
-        socket.emit('obtener_inicio');
-    } else if (contadorActivo && btnContador.textContent === 'Finalizar') {
-        socket.emit('finalizar_contador');
-    } else if (btnContador.textContent === 'Pagar') {
-        // Aquí se pude poner algo del proceso de pago
-    }
-});
-
 // Función para alternar el texto del botón basado en el estado del contador
 function toggleContadorButton(text) {
     const btnContador = document.getElementById('BtnIniciar');
     btnContador.textContent = text;
+    contadorActivo = (text === 'Finalizar');
 }
 
 // Función para iniciar el contador
 function iniciarContador(tiempoInicio) {
     clearInterval(contadorInterval);
-    actualizarContador(tiempoInicio);
+    const inicio = new Date(tiempoInicio).getTime();
     contadorInterval = setInterval(() => {
-        actualizarContador(tiempoInicio);
+        const ahora = Date.now(); 
+        const transcurrido = new Date(ahora - inicio);
+        document.getElementById('display_contador').textContent = formatearTiempo(transcurrido);
     }, 1000);
 }
 
@@ -117,8 +142,9 @@ function actualizarContador(tiempoInicio) {
     document.getElementById('display_contador').textContent = formatearTiempo(tiempoTranscurrido);
 }
 
+// Función para mantener el tiempo final en el contador
 function mantenerTiempoFinal() {
-    clearInterval(contadorInterval); 
+    clearInterval(contadorInterval);
     document.getElementById('display_contador').textContent = formatearTiempo(new Date(tiempoFinal));
 }
 
@@ -127,9 +153,29 @@ function detenerContador() {
     clearInterval(contadorInterval);
 }
 
+// Función para resetear el contador y regresarlo a Iniciar
+function resetearContador() {
+    detenerContador();
+    document.getElementById('display_contador').textContent = '00:00:00';
+    toggleContadorButton('Iniciar');
+    contadorActivo = false;
+    tiempoFinal = null;
+}
+
 // Solicitar el estado del contador cuando la página se carga
 document.addEventListener('DOMContentLoaded', function() {
     socket.emit('cargar_estado_contador');
+});
+
+// Cuando la página se carga, verificar si existe un tiempo de inicio
+document.addEventListener('DOMContentLoaded', function() {
+    let tiempoInicio = document.getElementById('tiempo_inicio') ? document.getElementById('tiempo_inicio').value : null;
+    if (tiempoInicio) {
+        iniciarContador(tiempoInicio);
+        toggleContadorButton('Finalizar');
+    } else {
+        toggleContadorButton('Iniciar');
+    }
 });
 
 // Escuchar el evento actualizar_tiempo

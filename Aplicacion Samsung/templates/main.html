@@ -5,38 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
     <title>Página Principal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        section {
+            margin: 20px;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #display_contador {
+            font-size: 2em;
+            text-align: center;
+            margin: 20px 0;
+        }
+        select, button {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>Página principal</h1>
+        <h1>Página de Pruebas</h1>
     </header>
 
+    <h2>Esta es la página en donde hago pruebas</h2>
+    <p>Aquí es donde se entra si se inicia sesión correctamente</p>
+    <p>Esta es la página en donde estoy haciendo pruebas</p>
 
-    <section>
-        <h2>Esta es la página a la que se ingresa</h2>
-        <p>Aquí es donde se entra si se inicia sesión correctamente</p>
-        <p>Esta es la página en donde estoy haciendo pruebas</p>
-    </section>
 
-    <!-- Contenedor para mostrar el contador -->
     <div id="display_contador">00:00:00</div>
 
-    <!-- Selector para la duración del contador -->
-    <select id="duracion">
-        <option value="5">5 minutos</option>
-        <option value="10">10 minutos</option>
-        <option value="15">15 minutos</option>
+    <section>
+        <p>Si se quiere seleccionar el tiempo que se quiere estar</p>
+        <select id="duracion">
+            <option value="5">5 minutos</option>
+            <option value="10">10 minutos</option>
+            <option value="15">15 minutos</option>
+        </select>
 
-    </select>
+        <button id="iniciar_contador">Iniciar Contador</button>
+    </section>
 
-    <!-- Botón para iniciar el contador -->
-    <button id="iniciar_contador">Iniciar Contador</button>
-    <button id="BtnIniciar">Iniciar</button>
-        
+    <section>
+        <p>En caso de que se quiera pagar dependiendo del tiempo que se estuvo</p>
+        <input type="hidden" id="tiempo_inicio" value="{{ tiempo_inicio if tiempo_inicio }}">
 
+        <button id="BtnIniciar">Iniciar</button>
+    </section>
 
     <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
-
-
 </body>
 </html>

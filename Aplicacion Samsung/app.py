@@ -92,10 +92,13 @@ def register():
 @app.route('/main')
 def principal():
     if 'usuario_id' in session:
-        return render_template('main.html')     # CAMBIAR ESTE POR menu.hmtl
+        # Se envía el tiempo de inicio si existe, para sincronizar el contador
+        tiempo_inicio = redis_client.get(f"contador:{session['usuario_id']}")
+        # Cambiar 'main.html por 'menu.hmtl'
+        return render_template('main.html', tiempo_inicio=tiempo_inicio.decode('utf-8') if tiempo_inicio else None)
     else:
         flash('Por favor, inicia sesión para continuar', 'danger')
-        return redirect(url_for('index'))  # Redirige a la página de inicio de sesión
+        return redirect(url_for('index'))
     
 # Enviar los lugares en donde hay estaciones
 @app.route('/estaciones')
@@ -205,7 +208,7 @@ def finalizar_contador():
                 (tiempo_final, session['id_servicio']))
             mysql.connection.commit()
             cursor.close()
-            emit('contador_finalizado', {'tiempo_finalizado': tiempo_final.isoformat()})
+            emit('contador_finalizado', {'tiempo_final_servidor': tiempo_final.isoformat()})
         except Exception as e:
             emit('error', {'mensaje': str(e)})
             
@@ -217,6 +220,18 @@ def cargar_estado_contador():
             emit('actualizar_tiempo', {'tiempo_inicio': tiempo_inicio.decode('utf-8')})
         else:
             emit('error', {'mensaje': "No se encontró un contador activo para el usuario."})
+            
+@app.route('/accion_motor', methods=['POST'])
+def accion_motor():
+    accion = request.json.get('accion')
+    if accion == 'abrir':
+        print('Se abre el sistema')
+    elif accion == 'cerrar':
+        print('Se cierra el sistema')
+    else:
+        return jsonify({"estado": "Error", "mensaje": "Acción no reconocida"}), 400
+
+    return jsonify({"estado": "Éxito", "accion": accion})
 
 # Correr el programa
 if __name__ == '__main__':
