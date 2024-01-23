@@ -81,6 +81,13 @@ body{
 }
 
 #localidad>p{
+<<<<<<< HEAD
+    margin-top: 0.5%;
+    margin-left: 0.5%;
+    font-size: 14;
+    position: fixed;
+    display: inline-block;
+=======
     position: relative;
     margin-top: 2%;
     margin-bottom:2%;
@@ -124,6 +131,7 @@ body{
 #numero{
     margin: 0 !important;
     font-size: 100%;
+>>>>>>> 62d696f00785dc2ff1c55bbc2020b3ea0b86c037
 }
 
 @font-face {
