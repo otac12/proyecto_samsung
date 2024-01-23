@@ -78,9 +78,11 @@ body{
 }
 
 #localidad>p{
-    margin: 0;
-    padding: 2%;
+    margin-top: 0.5%;
+    margin-left: 0.5%;
+    font-size: 14;
     position: fixed;
+    display: inline-block;
 }
 
 @font-face {
