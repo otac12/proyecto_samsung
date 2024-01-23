@@ -8,7 +8,6 @@
     <div id="registro">
         <div id="bolita"></div>
         <img src="{{ url_for('static', filename='img/logo.png') }}">
-        <form id="registroForm">
             <p>Nombre Completo</p>
             <input type="text" name="nombre" placeholder="Ingrese su nombre completo" required>
             
@@ -21,8 +20,8 @@
             <p>Confirmar Contraseña</p>
             <input type="password" name="confirmar_contrasena" placeholder="Confirme su contraseña" required>
             
-            <button type="submit">Registrar</button>
-        </form>
+            <button type="submit" id = "registroBoton">Registrar</button>
+
         <a href="{{ url_for('login') }}">¿Ya tienes cuenta? Inicia sesión</a>
     </div>
     <script src="{{ url_for('static', filename='js/registro.js') }}"></script>
