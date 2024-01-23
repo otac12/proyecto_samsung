@@ -91,7 +91,7 @@ def register():
     
 @app.route('/main')
 def principal():
-    if 'nombre_usuario' in session:
+    if 'usuario_id' in session:
         return render_template('main.html')     # CAMBIAR ESTE POR menu.hmtl
     else:
         flash('Por favor, inicia sesión para continuar', 'danger')

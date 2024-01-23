@@ -1,11 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Obtener formulario de registro
-    //var formulario = document.getElementById('registroForm');
-    var formulario = document.getElementById('login');
 
-    formulario.addEventListener('submit', function(e) {
-        e.preventDefault();
+    var btnRegistro = document.getElementById('registroBoton');
 
+    btnRegistro.addEventListener('click', function(e){    
+    
         // Validación del correo electrónico
         var correo = document.querySelector('input[name="correo"]').value;
         var regexCorreo = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
