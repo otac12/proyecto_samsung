@@ -38,15 +38,44 @@
             background-color: #218838;
         }
         .vehiculo-btn {
-    padding: 10px;
-    margin-right: 5px;
-    border: 1px solid #ddd;
-}
+            padding: 10px;
+            margin-right: 5px;
+            border: 1px solid #ddd;
+        }
 
-.vehiculo-btn.activo {
-    background-color: #007bff;
-    color: white;
-}
+        .vehiculo-btn.activo {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* Estilo para el botón inactivo */
+        .boton-alerta-inactivo {
+            /* Estilos para el botón inactivo (puedes ajustar estos estilos según necesites) */
+            background-color: grey;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: not-allowed;
+        }
+    
+        /* Animación de parpadeo */
+        @keyframes parpadeo {
+            0% { background-color: red; }
+            50% { background-color: darkred; }
+            100% { background-color: red; }
+        }
+    
+        /* Estilo para el botón activo */
+        .boton-alerta-activo {
+            /* Estilos para el botón activo */
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            animation: parpadeo 1s infinite;
+        }
+
     </style>
 </head>
 <body>
@@ -81,6 +110,11 @@
         <label for="nfc-number">Número de Tarjeta NFC:</label>
         <input type="text" id="numero-nfc" name="numero_nfc" required>
         <button id="btnNFC">Enlazar</button>
+    </section>
+
+    <section>
+        <h2>Alertas:</h2>
+        <button id="botonAlerta" class="boton-alerta-inactivo">Alerta de Robo</button>
     </section>
 
     <section>

@@ -44,6 +44,13 @@ document.getElementById('btnCargar').addEventListener('click', function() {
     this.textContent = cargar ? 'Cargar' : 'No Cargar';
 });
 
+// Event listener para el botón de alerta de Robo
+document.getElementById('botonAlerta').addEventListener('click', function() {
+    if (this.classList.contains('boton-alerta-activo')) {
+        desactivarAlerta();
+    }
+});
+
 // Función para manejar la selección de vehículo
 function seleccionarVehiculo(vehiculo) {
     document.getElementById('btn-bici').classList.remove('activo');
@@ -100,6 +107,15 @@ function enlazarNFC(numeroNFC) {
     });
 }
 
+// Escuchar las alertas del servidor
+socket.on('alerta_recibida', function(data) {
+    if (data.alerta === 1) {
+        // Activar el botón de alerta
+        document.getElementById('botonAlerta').classList.remove('boton-alerta-inactivo');
+        document.getElementById('botonAlerta').classList.add('boton-alerta-activo');
+    }
+});
+
 // Escuchar el evento contador_iniciado
 socket.on('contador_iniciado', function(data) {
     contadorActivo = true;
@@ -118,6 +134,13 @@ function toggleContadorButton(text) {
     const btnContador = document.getElementById('BtnIniciar');
     btnContador.textContent = text;
     contadorActivo = (text === 'Finalizar');
+}
+
+// Función para desactivar la alerta
+function desactivarAlerta() {
+    var boton = document.getElementById('botonAlerta');
+    boton.classList.remove('boton-alerta-activo');
+    boton.classList.add('boton-alerta-inactivo');
 }
 
 // Función para iniciar el contador
