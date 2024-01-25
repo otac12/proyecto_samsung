@@ -12,10 +12,10 @@ document.getElementById('BtnIniciar').addEventListener('click', function() {
             alert('Por favor, selecciona un vehículo para continuar.');
             return;
         }
-        enviarAccion('abrir');
+        enviarAccion('cerrar');
         socket.emit('obtener_inicio', { vehiculo: vehiculoSeleccionado, cargar: cargar });
     } else {
-        enviarAccion('cerrar');
+        enviarAccion('abrir');
         socket.emit('finalizar_contador');
     }
 });
@@ -60,7 +60,7 @@ function seleccionarVehiculo(vehiculo) {
 
 // Función para enviar la acción 'abrir' o 'cerrar' al servidor
 function enviarAccion(accion) {
-    fetch('/accion_motor', {
+    fetch('http://10.87.15.80:5000/anclaje', {
         method: 'POST',
         body: JSON.stringify({ accion: accion }),
         headers: {
