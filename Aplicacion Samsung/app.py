@@ -99,6 +99,15 @@ def register():
     except Exception as e:
         print(e)
         return jsonify({"estado": "Error", "mensaje": str(e)}), 500   
+
+# Cerrar sesión    
+@app.route('/logout')
+def logout():
+    # Elimina la información del usuario de la sesión
+    session.pop('usuario_id', None)
+
+    flash('Has cerrado sesión exitosamente', 'success')
+    return redirect(url_for('index'))    
         
 # Enviar los lugares en donde hay estaciones
 @app.route('/estaciones')
