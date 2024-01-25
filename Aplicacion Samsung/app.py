@@ -27,9 +27,20 @@ app.config['MYSQL_DB'] = db['mysql_db']
 mysql = MySQL(app)
 
 
+#Iniciar en la página de login si esta iniciada la sesión mandar a la principal
 @app.route('/')
 def index():
+    if 'usuario_id' in session:
+        return redirect('/main')
     return render_template('login.html')
+
+# Página principal
+@app.route('/main')
+def principal():
+    if 'usuario_id' in session:
+        tiempo_inicio = redis_client.get(f"contador:{session['usuario_id']}")
+        return render_template('main.html', tiempo_inicio=tiempo_inicio.decode('utf-8') if tiempo_inicio else None)
+    return redirect('/')
 
 
 @app.route('/registro')
@@ -88,18 +99,7 @@ def register():
     except Exception as e:
         print(e)
         return jsonify({"estado": "Error", "mensaje": str(e)}), 500   
-    
-@app.route('/main')
-def principal():
-    if 'usuario_id' in session:
-        # Se envía el tiempo de inicio si existe, para sincronizar el contador
-        tiempo_inicio = redis_client.get(f"contador:{session['usuario_id']}")
-        # Cambiar 'main.html por 'menu.hmtl'
-        return render_template('main.html', tiempo_inicio=tiempo_inicio.decode('utf-8') if tiempo_inicio else None)
-    else:
-        flash('Por favor, inicia sesión para continuar', 'danger')
-        return redirect(url_for('index'))
-    
+        
 # Enviar los lugares en donde hay estaciones
 @app.route('/estaciones')
 def estaciones():
@@ -122,75 +122,55 @@ def estaciones():
         return jsonify(estaciones)
     else:
         return jsonify({"error": "Usuario no encontrado"}), 401
+    
+# Guardar la tarjeta NFC en la base de datos
+@app.route('/enlazar_nfc', methods=['POST'])
+def enlazar_nfc():
+    if 'usuario_id' in session:
+        # Obtiene el número de la tarjeta NFC del cuerpo de la solicitud
+        nfc_number = request.json.get('nfc_number')
+        usuario_id = session['usuario_id']
 
-### EN EL CASO EN DONDE SE UTILICE LA SELECCIÓN DE LA HORA EN LA QUE SE TERMINA
-
-"""
-
-# Guardar las horas de inicio y final para iniciar el contador utilizando SocketIO
-@socketio.on('iniciar_contador')
-def iniciar_contador(json):
-    if 'nombre_usuario' in session:
-        duracion = json['duracion']
-        tiempo_inicio = datetime.now()
-        tiempo_final = tiempo_inicio + timedelta(minutes=duracion)
-        session['tiempo_final'] = tiempo_final.strftime('%Y-%m-%d %H:%M:%S')
-        
         try:
-            # Obtener el ID del usuario a partir del nombre de usuario en la sesión
+            # Inserta los datos en la base de datos
             cursor = mysql.connection.cursor(cursorclass=DictCursor)
-            cursor.execute("SELECT ID FROM usuario WHERE Nombre = %s", (session['nombre_usuario'],))
-            usuario_id = cursor.fetchone()['ID']
-           
-            # Guardar la hora de inicio y la hora final en la base de datos
-            cursor.execute(
-                "INSERT INTO servicio (Tiempo_inicio, Tiempo_final, Usuario) VALUES (%s, %s, %s)",
-                (tiempo_inicio, tiempo_final, usuario_id))
+            cursor.execute("INSERT INTO metodos_pago (Metodo_pago, no_cuenta, ID) VALUES (%s, %s, %s)", 
+                           ('tarjeta', nfc_number, usuario_id))
             mysql.connection.commit()
             cursor.close()
-
-            # Almacenar tiempo final en Redis
-            redis_client.set('tiempo_final_{}'.format(session['nombre_usuario']), session['tiempo_final'])
-            
-            emit('actualizar_contador', {'tiempo_final': session['tiempo_final']})
+            return jsonify({"estado": "Éxito", "mensaje": "Tarjeta NFC enlazada con éxito"})
         except Exception as e:
-            emit('error', {'mensaje': str(e)})
-            
-@socketio.on('verificar_estado_contador')
-def verificar_estado_contador():
-    if 'nombre_usuario' in session:
-        tiempo_final = redis_client.get('tiempo_final_{}'.format(session['nombre_usuario']))
-        if tiempo_final:
-            emit('actualizar_contador', {'tiempo_final': tiempo_final.decode('utf-8')})
-        else:
-            emit('error', {'mensaje': "No hay contador activo"})
-            
- 
-"""           
-            
-### EN CASO DE QUE NO SE SELECCIONE CUANTO TIEMPO QUIERE ESTAR
+            return jsonify({"estado": "Error", "mensaje": str(e)}), 500
+    else:
+        return jsonify({"estado": "Error", "mensaje": "Usuario no autenticado"}), 401
 
-# Obtener hora de inicio
+# Cuando se da inicio se obtiene la hora de inicio y el vehiculo a utilizar
 @socketio.on('obtener_inicio')
-def obtener_inicio():
-    if 'usuario_id' in session:
+def obtener_inicio(data):
+    usuario_id = session.get('usuario_id')
+    vehiculo = data['vehiculo']
+
+    if usuario_id:
         tiempo_inicio = datetime.now()
 
         # Guardar el tiempo de inicio en Redis
-        redis_client.set(f"contador:{session['usuario_id']}", tiempo_inicio.isoformat())
+        redis_client.set(f"contador:{usuario_id}", tiempo_inicio.isoformat())
+        redis_client.set('contador_activo:{}'.format(session['usuario_id']), 'true')
 
         try:
-            # Guardar el tiempo de inicio en MySQL
+            # Guardar el tiempo de inicio y el vehículo en la base de datos
             cursor = mysql.connection.cursor(cursorclass=DictCursor)
             cursor.execute(
-                "INSERT INTO servicio (Usuario, Tiempo_inicio) VALUES (%s, %s)",
-                (session['usuario_id'], tiempo_inicio))
+                "INSERT INTO servicio (Usuario, Tiempo_inicio, Vehiculo) VALUES (%s, %s, %s)",
+                (usuario_id, tiempo_inicio, vehiculo))
             mysql.connection.commit()
             session['id_servicio'] = cursor.lastrowid
             cursor.close()
             emit('contador_iniciado', {'tiempo_inicial': tiempo_inicio.isoformat()})
         except Exception as e:
             emit('error', {'mensaje': str(e)})
+    else:
+        emit('error', {'mensaje': 'Usuario no autenticado'})
             
 @socketio.on('finalizar_contador')
 def finalizar_contador():
@@ -199,6 +179,7 @@ def finalizar_contador():
 
         # Eliminar el estado del contador de Redis
         redis_client.delete(f"contador:{session['usuario_id']}")
+        redis_client.delete('contador_activo:{}'.format(session['usuario_id']))
 
         try:
             # Guardar el tiempo final en MySQL
@@ -221,6 +202,15 @@ def cargar_estado_contador():
         else:
             emit('error', {'mensaje': "No se encontró un contador activo para el usuario."})
             
+# Cuando se carga la página, verifica el estado del contador.
+@app.route('/estado_contador')
+def estado_contador():
+    if 'usuario_id' in session:
+        estado = redis_client.get('contador_activo:{}'.format(session['usuario_id']))
+        return jsonify({'contador_activo': bool(estado)})
+    return jsonify({'contador_activo': False})
+
+# Saber el estado en el que debe de estar el motor            
 @app.route('/accion_motor', methods=['POST'])
 def accion_motor():
     accion = request.json.get('accion')

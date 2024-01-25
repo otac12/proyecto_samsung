@@ -37,6 +37,16 @@
         button:hover {
             background-color: #218838;
         }
+        .vehiculo-btn {
+    padding: 10px;
+    margin-right: 5px;
+    border: 1px solid #ddd;
+}
+
+.vehiculo-btn.activo {
+    background-color: #007bff;
+    color: white;
+}
     </style>
 </head>
 <body>
@@ -46,27 +56,36 @@
 
     <h2>Esta es la página en donde hago pruebas</h2>
     <p>Aquí es donde se entra si se inicia sesión correctamente</p>
-    <p>Esta es la página en donde estoy haciendo pruebas</p>
-
 
     <div id="display_contador">00:00:00</div>
 
     <section>
-        <p>Si se quiere seleccionar el tiempo que se quiere estar</p>
-        <select id="duracion">
-            <option value="5">5 minutos</option>
-            <option value="10">10 minutos</option>
-            <option value="15">15 minutos</option>
-        </select>
+        <h2>Selecciona tu vehículo</h2>
+        <button id="btn-bici" class="vehiculo-btn">Bicicleta</button>
+        <button id="btn-scooter" class="vehiculo-btn">Scooter</button>
+    </section>
 
-        <button id="iniciar_contador">Iniciar Contador</button>
+    <section>
+        <h2>¿Quieres cargar el vehiculo?</h2>
+        <button id="btnCargar" class="btn-cargar">No Cargar</button>
     </section>
 
     <section>
         <p>En caso de que se quiera pagar dependiendo del tiempo que se estuvo</p>
         <input type="hidden" id="tiempo_inicio" value="{{ tiempo_inicio if tiempo_inicio }}">
-
         <button id="BtnIniciar">Iniciar</button>
+    </section>
+
+    <section>
+        <h2>Enlazar Tarjeta NFC</h2>
+        <label for="nfc-number">Número de Tarjeta NFC:</label>
+        <input type="text" id="numero-nfc" name="numero_nfc" required>
+        <button id="btnNFC">Enlazar</button>
+    </section>
+
+    <section>
+        <h2>Cerrar Sesión</h2>
+        <button onclick="location.href='/logout'">Cerrar Sesión</button>
     </section>
 
     <script src="{{ url_for('static', filename='js/menu.js') }}"></script>

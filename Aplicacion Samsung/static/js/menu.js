@@ -1,90 +1,70 @@
-/******************** SE PUEDE SELECCIONAR CUANDO FINALIZA *********************/
-/*
-// Inicializar una conexión WebSocket con el servidor Flask-SocketIO
-const socket = io();
-
-// Escuchar el evento actualizar_contador emitido por el servidor
-socket.on('actualizar_contador', function(data) {
-    // Actualiza el contador con el tiempo final recibido de la base de datos dado por el servidor
-    actualizarContador(new Date(data.tiempo_final).getTime());
-});
-
-// Escuchar errores emitidos por el servidor
-socket.on('error', function(data) {
-    console.error('Error:', data.mensaje);
-    alert('Error: ' + data.mensaje);
-});
-
-// Event listener para el botón de inicio del contador
-document.getElementById('iniciar_contador').addEventListener('click', function() {
-    let duracion = parseInt(document.getElementById('duracion').value);
-    socket.emit('iniciar_contador', { duracion: duracion });
-});
-
-// Solicitar el estado del contador al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
-    socket.emit('verificar_estado_contador');
-});
-
-// Función para actualizar el contador en la página
-function actualizarContador(tiempoFinalMillis) {
-    clearInterval(window.contadorInterval);
-
-    window.contadorInterval = setInterval(() => {
-        let tiempoRestante = (tiempoFinalMillis - new Date().getTime()) / 1000;
-        if (tiempoRestante > 0) {
-            document.getElementById('display_contador').textContent = formatearTiempo(tiempoRestante);
-        } else {
-            clearInterval(window.contadorInterval);
-            document.getElementById('display_contador').textContent = '00:00:00';
-            socket.emit('contador_finalizado');
-        }
-    }, 1000);
-}
-
-// Función para dar formato al tiempo (segundos a HH:MM:SS)
-function formatearTiempo(segundos) {
-    let horas = Math.floor(segundos / 3600);
-    let minutos = Math.floor((segundos % 3600) / 60);
-    let segundosRestantes = Math.floor(segundos % 60);
-    return [horas, minutos, segundosRestantes]
-        .map(v => v < 10 ? "0" + v : v)
-        .join(':'); 
-}
-*/
-
-/******************** SI NO HAY UNA SELECCION PARA FINALIZAR *********************/
-
 const socket = io();
 
 let contadorActivo = false;
 let contadorInterval;
-let tiempoFinal;
+let vehiculoSeleccionado = null;
+let cargar = false;
 
 // Event listener para el botón de inicio del contador
 document.getElementById('BtnIniciar').addEventListener('click', function() {
     if (!contadorActivo) {
-        // Cuando el contador está inactivo y se quiere iniciar
+        if (!vehiculoSeleccionado) {
+            alert('Por favor, selecciona un vehículo para continuar.');
+            return;
+        }
         enviarAccion('abrir');
-        socket.emit('obtener_inicio');
-    } else if (contadorActivo && this.textContent === 'Finalizar') {
-        // Cuando el contador está activo y se quiere finalizar
+        socket.emit('obtener_inicio', { vehiculo: vehiculoSeleccionado, cargar: cargar });
+    } else {
         enviarAccion('cerrar');
         socket.emit('finalizar_contador');
-    } else if (this.textContent === 'Pagar') {
-        // Cuando se ha finalizado el contador y se quiere pagar
-        resetearContador();
-        enviarAccion('abrir'); // Enviar abrir cuando se quiere reiniciar después de pagar
     }
 });
 
+// Event listeners para los botones de selección de vehículo
+document.getElementById('btn-bici').addEventListener('click', function() {
+    seleccionarVehiculo('Bicicleta');
+});
+document.getElementById('btn-scooter').addEventListener('click', function() {
+    seleccionarVehiculo('Scooter');
+});
+
+// Event listener para agregar una tarjeta NFC
+document.getElementById('btnNFC').addEventListener('click', function() {
+    const numeroNFC = document.getElementById('numero-nfc').value;
+    if (numeroNFC.trim() === '') {
+        alert('Por favor, ingresa el número de la tarjeta NFC.');
+        return;
+    }
+    enlazarNFC(numeroNFC);
+});
+
+// Event listener par cargar el vehiculo
+document.getElementById('btnCargar').addEventListener('click', function() {
+    cargar = !cargar;
+    this.textContent = cargar ? 'Cargar' : 'No Cargar';
+});
+
+// Función para manejar la selección de vehículo
+function seleccionarVehiculo(vehiculo) {
+    document.getElementById('btn-bici').classList.remove('activo');
+    document.getElementById('btn-scooter').classList.remove('activo');
+
+    if (vehiculo === 'Bicicleta') {
+        document.getElementById('btn-bici').classList.add('activo');
+    } else if (vehiculo === 'Scooter') {
+        document.getElementById('btn-scooter').classList.add('activo');
+    }
+
+    vehiculoSeleccionado = vehiculo;
+}
+
 // Función para enviar la acción 'abrir' o 'cerrar' al servidor
 function enviarAccion(accion) {
-    fetch('/accion_contador', {
+    fetch('/accion_motor', {
         method: 'POST',
-        body: new URLSearchParams({ 'accion': accion }),
+        body: JSON.stringify({ accion: accion }),
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/json'
         },
     })
     .then(response => response.json())
@@ -96,6 +76,30 @@ function enviarAccion(accion) {
     });
 }
 
+// Función para enlazar una tarjeta NFC
+function enlazarNFC(numeroNFC) {
+    fetch('/enlazar_nfc', {
+        method: 'POST',
+        body: JSON.stringify({ nfc_number: numeroNFC }),
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.estado === 'Éxito') {
+            alert('Tarjeta NFC enlazada con éxito!');
+            document.getElementById('numero-nfc').value = '';
+        } else {
+            alert(data.mensaje);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al enlazar la tarjeta NFC.');
+    });
+}
+
 // Escuchar el evento contador_iniciado
 socket.on('contador_iniciado', function(data) {
     contadorActivo = true;
@@ -104,17 +108,9 @@ socket.on('contador_iniciado', function(data) {
 });
 
 // Escuchar el evento contador_finalizado
-socket.on('contador_finalizado', function(data) {
+socket.on('contador_finalizado', function() {
     contadorActivo = false;
-    tiempoFinal = new Date(data.tiempo_final_servidor).getTime();
-    toggleContadorButton('Pagar');
-    mantenerTiempoFinal();
-});
-
-// Escuchar errores emitidos por el servidor
-socket.on('error', function(data) {
-    console.error('Error:', data.mensaje);
-    alert('Error: ' + data.mensaje);
+    resetearContador();
 });
 
 // Función para alternar el texto del botón basado en el estado del contador
@@ -129,28 +125,10 @@ function iniciarContador(tiempoInicio) {
     clearInterval(contadorInterval);
     const inicio = new Date(tiempoInicio).getTime();
     contadorInterval = setInterval(() => {
-        const ahora = Date.now(); 
+        const ahora = Date.now();
         const transcurrido = new Date(ahora - inicio);
         document.getElementById('display_contador').textContent = formatearTiempo(transcurrido);
     }, 1000);
-}
-
-// Función para actualizar el contador
-function actualizarContador(tiempoInicio) {
-    const tiempoActual = new Date();
-    const tiempoTranscurrido = new Date(tiempoActual - tiempoInicio);
-    document.getElementById('display_contador').textContent = formatearTiempo(tiempoTranscurrido);
-}
-
-// Función para mantener el tiempo final en el contador
-function mantenerTiempoFinal() {
-    clearInterval(contadorInterval);
-    document.getElementById('display_contador').textContent = formatearTiempo(new Date(tiempoFinal));
-}
-
-// Función para detener el contador
-function detenerContador() {
-    clearInterval(contadorInterval);
 }
 
 // Función para resetear el contador y regresarlo a Iniciar
@@ -159,38 +137,34 @@ function resetearContador() {
     document.getElementById('display_contador').textContent = '00:00:00';
     toggleContadorButton('Iniciar');
     contadorActivo = false;
-    tiempoFinal = null;
 }
 
-// Solicitar el estado del contador cuando la página se carga
-document.addEventListener('DOMContentLoaded', function() {
-    socket.emit('cargar_estado_contador');
-});
-
-// Cuando la página se carga, verificar si existe un tiempo de inicio
-document.addEventListener('DOMContentLoaded', function() {
-    let tiempoInicio = document.getElementById('tiempo_inicio') ? document.getElementById('tiempo_inicio').value : null;
-    if (tiempoInicio) {
-        iniciarContador(tiempoInicio);
-        toggleContadorButton('Finalizar');
-    } else {
-        toggleContadorButton('Iniciar');
-    }
-});
-
-// Escuchar el evento actualizar_tiempo
-socket.on('actualizar_tiempo', function(data) {
-    contadorActivo = true;
-    toggleContadorButton('Finalizar');
-    iniciarContador(new Date(data.tiempo_inicio));
-});
+// Función para detener el contador
+function detenerContador() {
+    clearInterval(contadorInterval);
+}
 
 // Función para dar formato al tiempo
 function formatearTiempo(tiempo) {
     let horas = tiempo.getUTCHours();
     let minutos = tiempo.getUTCMinutes();
     let segundos = tiempo.getUTCSeconds();
-    return [horas, minutos, segundos]
-        .map(v => v < 10 ? "0" + v : v)
-        .join(':'); 
+    return [horas, minutos, segundos].map(v => v < 10 ? "0" + v : v).join(':');
 }
+
+// Verificar el estado del contador al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    socket.emit('cargar_estado_contador');
+});
+
+socket.on('actualizar_tiempo', function(data) {
+    contadorActivo = true;
+    toggleContadorButton('Finalizar');
+    iniciarContador(new Date(data.tiempo_inicio));
+});
+
+// Escuchar errores emitidos por el servidor
+socket.on('error', function(data) {
+    console.error('Error:', data.mensaje);
+    alert('Error: ' + data.mensaje);
+});
