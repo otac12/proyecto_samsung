@@ -23,7 +23,16 @@ body {
     margin-bottom: 10vh; 
     position: absolute;
     width: 40%;
-    height: 60vh; 
+    height: 80vh; 
+}
+
+#Nombre {
+    width: 80%;
+    margin-left: 8%;
+    position: relative;
+    font-size: 20px;
+    margin-bottom: 1%; 
+    margin-top: 15%; 
 }
 
 #bolita {
@@ -46,7 +55,7 @@ img {
 
 input {
     width: 80%;
-    height: 8%; 
+    height: 5%; 
     border-radius: 10px;
     border: 2px solid #cccccc;
     position: relative;

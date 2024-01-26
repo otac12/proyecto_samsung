@@ -39,7 +39,7 @@ def index():
 def principal():
     if 'usuario_id' in session:
         tiempo_inicio = redis_client.get(f"contador:{session['usuario_id']}")
-        return render_template('main.html', tiempo_inicio=tiempo_inicio.decode('utf-8') if tiempo_inicio else None)
+        return render_template('menu.html', tiempo_inicio=tiempo_inicio.decode('utf-8') if tiempo_inicio else None)
     return redirect('/')
 
 

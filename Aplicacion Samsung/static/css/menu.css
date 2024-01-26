@@ -468,6 +468,10 @@ body{
     position: relative;
 }
 
+#bici.activo, #scooter.activo {
+    background-color: #69cbbb36; 
+}
+
 #costobici{
     background: white;
     margin-top: 3%;
