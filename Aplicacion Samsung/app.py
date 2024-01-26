@@ -5,10 +5,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from flask_socketio import SocketIO, emit
 from flask_redis import FlaskRedis
+from flask_cors import CORS
 import yaml
 import re
 
 app = Flask(__name__)
+CORS(app)
 # Configuración de Flask-SocketIO
 socketio = SocketIO(app)
 # Configuración de Redis
@@ -152,55 +154,61 @@ def enlazar_nfc():
             return jsonify({"estado": "Error", "mensaje": str(e)}), 500
     else:
         return jsonify({"estado": "Error", "mensaje": "Usuario no autenticado"}), 401
-    
+ 
+API_TOKEN = '123'    
 # Obtener la tarjeta del servidor
 @app.route('/recibir_tarjeta', methods=['POST'])
 def recibir_tarjeta():
-    if 'usuario_id' in session:
-        datos = request.get().json()
-        tarjeta_recibida = datos ['no']
-        usuario_id = session['usuario_id']
+    token = request.headers.get('Authorization')
+    print("El numero autentificador es: %s" % token)
+    
+    if token != API_TOKEN:
+        print("Autenticación fallida")
+        return jsonify({"estado": "Error", "mensaje": "Autenticación fallida"}), 401
+    else: 
+        print ("Se logro autentificar")    
+
+        datos = request.get_json()  
+        tarjeta_recibida = str(datos['no'])
         
-        try:
-            # Consultar la base de datos para obtener el numero de cuenta
-            cursor = mysql.connection.cursor(cursorclass=DictCursor)
-            cursor.execute("SELECT no_cuenta FROM metodos_pago WHERE ID = %s AND Metodo_pago = %s", 
-                           (usuario_id, 'tarjeta'))
-            tarjeta_base = cursor.fetchone()
-            cursor.close()
-            
-            # Verificar si son iguales
-            if tarjeta_base and tarjeta_base['no_cuenta'] == tarjeta_recibida:
-                return jsonify({"coincidencia": True})
-            else: 
-                return jsonify({"coincidencia": False})
-        except Exception as e:
-            return jsonify({"estado": "Error", "mensaje": str(e)}), 500
+        print("Se recibió tarjeta: %s" % tarjeta_recibida)
+        
+        # Consultar la base de datos para obtener el numero de cuenta
+        cursor = mysql.connection.cursor(cursorclass=DictCursor)
+        cursor.execute("SELECT * FROM metodos_pago WHERE no_cuenta = '"+tarjeta_recibida+"'")
+        tarjeta_base = cursor.fetchone()
+        cursor.close()
+
+        # Verificar si son iguales
+        if tarjeta_base and tarjeta_base['no_cuenta'] == tarjeta_recibida:
+            return jsonify({"validacion": True})
+        else: 
+            return jsonify({"validacion": False})
+        
         
 # Obtener las alertas del servidor
 # ALERTA DE ROBO = 1
 @app.route('/recibir_alertas', methods=['POST'])
 def recibir_alerta():
-    if 'usuario_id' in session:
-        datos = request.get().json()
-        alerta_recibida = datos['alerta']
+
+    datos = request.get().json()
+    alerta_recibida = datos['alerta']
+    
+    try:
+        usuario_id = session['usuario_id']
+        cursor = mysql.connection.cursor(cursorclass=DictCursor)
+        cursor.execute(
+            "INSERT INTO servicio (Usuario, Alerta) VALUES (%s, %s)",
+            (usuario_id, alerta_recibida))
+        mysql.connection.commit()
+        cursor.close()
         
-        try:
-            usuario_id = session['usuario_id']
-            cursor = mysql.connection.cursor(cursorclass=DictCursor)
-            cursor.execute(
-                "INSERT INTO servicio (Usuario, Alerta) VALUES (%s, %s)",
-                (usuario_id, alerta_recibida))
-            mysql.connection.commit()
-            cursor.close()
-            
-            emit('alerta_recibida', {'alerta': alerta_recibida}, broadcast=True)
-            
-            return jsonify({"estado":  "Alerta guardada"})
-        except Exception as e:
-            return jsonify({"estado": "Error", "mensaje": str(e)}), 500
-    else:
-        return jsonify({"estado": "Error", "mensaje": "Usuario no autenticado"}), 401           
+        emit('alerta_recibida', {'alerta': alerta_recibida}, broadcast=True)
+        
+        return jsonify({"estado":  "Alerta guardada"})
+    except Exception as e:
+        return jsonify({"estado": "Error", "mensaje": str(e)}), 500
+          
 
 # Cuando se da inicio se obtiene la hora de inicio y el vehiculo a utilizar
 @socketio.on('obtener_inicio')
@@ -294,4 +302,4 @@ def accion_motor():
 
 # Correr el programa
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True, host='0.0.0.0', port='4999')

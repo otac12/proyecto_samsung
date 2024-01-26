@@ -139,6 +139,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 enviarAccion('cerrar');
+                
+                if (cargar) {
+                    fetch('http://10.87.15.80:5000/anclaje', {
+                        method: 'POST',
+                        body: JSON.stringify({ vehiculo: vehiculoSeleccionado }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Datos enviados:', data);
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+                }
+
                 socket.emit('obtener_inicio', { vehiculo: vehiculoSeleccionado, cargar: cargar });
             } else {
                 enviarAccion('abrir');
@@ -194,6 +212,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Actualiza la fecha inmediatamente al cargar
     actualizarFecha();
+
+    // Función para que parpade le alerta de Forsejeo
+    function activarAlertaForsejeo() {
+        const divForsejeo = document.getElementById('alertaForsejeo');
+        divForsejeo.classList.add('parpadeo');
+    }
+
+    // Función para desactivar la alerta de Forsejeo
+    function desactivarAlertaForsejeo() {
+        const divForsejeo = document.getElementById('alertaForsejeo');
+        divForsejeo.classList.remove('parpadeo');
+    }
 
     // Event listeners para selección de vehículos
     if (btnBici && btnScooter) {
