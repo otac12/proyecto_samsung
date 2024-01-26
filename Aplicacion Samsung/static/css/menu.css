@@ -264,6 +264,13 @@ body{
     margin-top: 20%;
 }
 
+#imgCargar {
+    display: block;
+}
+#imgNoCarg {
+    display: none; 
+}
+
 #rfid{
     background: white;
     margin-top: 2.5%;
