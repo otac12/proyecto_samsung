@@ -1,4 +1,11 @@
 Flask==3.0.0
-flask-mysqldb
-flask-cors
-PyYAML
+Flask-Cors==4.0.0
+Flask-MySQLdb==2.0.0
+Flask-Redis==0.4.0
+Flask-SocketIO==5.3.6
+PyYAML==6.0.1
+python-engineio==4.8.2
+python-socketio==5.11.0
+mysqlclient==2.2.0
+redis==5.0.1
+

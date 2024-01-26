@@ -209,6 +209,17 @@ def obtener_inicio(data):
     vehiculo = data['vehiculo']
 
     if usuario_id:
+        
+        # Verificar si el usuario tiene un número de cuenta NFC asociado
+        cursor = mysql.connection.cursor(cursorclass=DictCursor)
+        cursor.execute("SELECT * FROM metodos_pago WHERE ID = %s AND Metodo_pago = 'tarjeta'", (usuario_id,))
+        tarjeta_nfc = cursor.fetchone()
+
+        if not tarjeta_nfc:
+            cursor.close()
+            emit('error', {'mensaje': 'No hay tarjeta NFC enlazada'})
+            return
+        
         tiempo_inicio = datetime.now()
 
         # Guardar el tiempo de inicio en Redis
