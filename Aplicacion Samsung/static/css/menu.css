@@ -242,6 +242,32 @@ body{
     display: block;
 }
 
+.dialogo-oculto {
+    display: none;
+}
+
+.dialogo-visible {
+    display: block;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.contenido-dialogo {
+    text-align: center;
+}
+
+#numeroNFC {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
 #relojini{
     background: white;
     width: 100%;
@@ -250,7 +276,7 @@ body{
     position: relative;
 }
 
-#ra{
+#ra, #rd{
     width: 100%;
     height: 17%;
     border-radius: 10px;
@@ -260,7 +286,7 @@ body{
     align-items: center; 
 }
 
-#ra>p{
+#ra>p, #rd>p{
     font-size: 15px;
     position: fixed;
     display: inline-block;

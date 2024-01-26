@@ -1,12 +1,15 @@
+// Espera a que el DOM esté completamente cargado antes de ejecutar el script
 document.addEventListener('DOMContentLoaded', function() {
-    const socket = io();
+    // Inicialización del socket
+    const socket = io();                
 
     let contadorActivo = false;
     let contadorInterval;
     let vehiculoSeleccionado = null;
     let cargar = false;
 
-    // Funciones
+    /* FUNCIONES */
+    // Función para manejar la selección del vehículo
     function seleccionarVehiculo(vehiculo) {
         document.getElementById('bici').classList.remove('activo');
         document.getElementById('scooter').classList.remove('activo');
@@ -20,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         vehiculoSeleccionado = vehiculo;
     }
 
+    // Función para manejar la selección del vehículo
     function enviarAccion(accion) {
         fetch('http://10.87.15.80:5000/anclaje', {
             method: 'POST',
@@ -37,6 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Función para enlazar una tarjeta NFC
     function enlazarNFC(numeroNFC) {
         fetch('/enlazar_nfc', {
             method: 'POST',
@@ -60,22 +65,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Función para mostrar el cuadro de diálogo NFC
     function mostrarDialogoNFC() {
-        // Implementa la lógica para mostrar un cuadro de diálogo aquí
+        document.getElementById('dialogoNFC').classList.add('dialogo-visible');
     }
 
+    // Función para desactivar la alerta visual
     function desactivarAlerta() {
         var boton = document.getElementById('botonAlerta');
         boton.classList.remove('boton-alerta-activo');
         boton.classList.add('boton-alerta-inactivo');
     }
 
+    // Función para cambiar el texto del botón de inicio/finalizar del contador
     function toggleContadorButton(text) {
         const btnContador = document.getElementById('BtnIniciar');
         btnContador.textContent = text;
         contadorActivo = (text === 'Finalizar');
     }
 
+    // Función para iniciar el contador
     function iniciarContador(tiempoInicio) {
         clearInterval(contadorInterval);
         const inicio = new Date(tiempoInicio).getTime();
@@ -86,6 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 
+    // Función para dar formato al tiempo transcurrido
     function formatearTiempo(tiempo) {
         let horas = tiempo.getUTCHours();
         let minutos = tiempo.getUTCMinutes();
@@ -96,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('cg').textContent = segundos < 10 ? "0" + segundos : segundos;
     }
 
+    // Función para resetear el contador a su estado inicial
     function resetearContador() {
         detenerContador();
         document.getElementById('ca').textContent = '00';
@@ -105,11 +116,12 @@ document.addEventListener('DOMContentLoaded', function() {
         contadorActivo = false;
     }
 
+    // Función para detener el contador
     function detenerContador() {
         clearInterval(contadorInterval);
     }
 
-    // Event listeners
+    // Event listeners para botones y elementos
     const btnIniciar = document.getElementById('BtnIniciar');
     const btnBici = document.getElementById('bici');
     const btnScooter = document.getElementById('scooter');
@@ -118,6 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const botonAlerta = document.getElementById('botonAlerta');
     const rfid = document.getElementById('rfid');
 
+    // Event listener para el botón de inicio
     if (btnIniciar) {
         btnIniciar.addEventListener('click', function() {
             if (!contadorActivo) {
@@ -134,11 +147,61 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Event listener para el diálogo NFC
+    document.getElementById('rfid').addEventListener('click', mostrarDialogoNFC);
+    document.getElementById('btnCerrarDialogo').addEventListener('click', function() {
+        document.getElementById('dialogoNFC').classList.remove('dialogo-visible');
+    });
+    document.getElementById('btnEnlazarNFC').addEventListener('click', function() {
+        const numeroNFC = document.getElementById('numeroNFC').value;
+        if (numeroNFC.trim() === '') {
+            alert('Por favor, ingresa el número de la tarjeta NFC.');
+            return;
+        }
+        enlazarNFC(numeroNFC);
+        document.getElementById('dialogoNFC').classList.remove('dialogo-visible');
+    });
+
+    // Funciónpara actualizar la hora del div con la hora actual. 
+    function actualizarHora() {
+        const ahora = new Date();
+        const horas = ahora.getHours().toString().padStart(2, '0');
+        const minutos = ahora.getMinutes().toString().padStart(2, '0');
+        const tiempo = horas + ':' + minutos;
+    
+        document.querySelector('#rb p').textContent = tiempo;
+    }
+    
+    // Actualiza la hora al cargar y cada minuto
+    actualizarHora();
+    setInterval(actualizarHora, 60000);
+
+    // Función para actualizar la fecha actual
+    function actualizarFecha() {
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    
+        const hoy = new Date();
+        const diaSemana = dias[hoy.getDay()];
+        const dia = hoy.getDate();
+        const mes = meses[hoy.getMonth()];
+        const año = hoy.getFullYear();
+    
+        const fechaTexto = `${diaSemana}, ${mes} ${dia}, ${año}`;
+    
+        document.querySelector('#rd p').textContent = fechaTexto;
+    }
+    
+    // Actualiza la fecha inmediatamente al cargar
+    actualizarFecha();
+
+    // Event listeners para selección de vehículos
     if (btnBici && btnScooter) {
         btnBici.addEventListener('click', () => seleccionarVehiculo('Bicicleta'));
         btnScooter.addEventListener('click', () => seleccionarVehiculo('Scooter'));
     }
 
+    // Event listener para la tarjeta NFC
     if (btnNFC) {
         btnNFC.addEventListener('click', function() {
             const numeroNFC = document.getElementById('numero-nfc').value;
@@ -150,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Event listener para el botón de carga
     if (btnCargar) {
         btnCargar.addEventListener('click', function() {
             cargar = !cargar;
@@ -157,6 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Event listener para el botón de alerta
     if (botonAlerta) {
         botonAlerta.addEventListener('click', function() {
             if (this.classList.contains('boton-alerta-activo')) {
@@ -165,10 +230,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Event listener para el diálogo NFC
     if (rfid) {
         rfid.addEventListener('click', mostrarDialogoNFC);
     }
 
+    // Event listeners para las alertas
     document.querySelectorAll('.alertas').forEach(function(alertaElem) {
         alertaElem.addEventListener('click', function() {
             if (this.textContent.includes('Alerta de Forsejeo')) {
@@ -177,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Socket listeners
+    // Socket listeners para manejar eventos del servidor
     socket.on('alerta_recibida', function(data) {
         if (data.alerta === 1) {
             document.getElementById('botonAlerta').classList.remove('boton-alerta-inactivo');
@@ -201,8 +268,10 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Error: ' + data.mensaje);
     });
 
+    // Socket listeners para manejar eventos del servidor
     socket.emit('cargar_estado_contador');
 
+    // Socket listeners para manejar eventos del servidor
     socket.on('actualizar_tiempo', function(data) {
         contadorActivo = true;
         toggleContadorButton('Finalizar');

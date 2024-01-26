@@ -51,6 +51,15 @@
             <div id="rfid">
                 <img src="../static/img/RFDI.png">
             </div>
+            <div id="dialogoNFC" class="dialogo-oculto">
+                <div class="contenido-dialogo">
+                    <h2>Enlazar Tarjeta NFC</h2>
+                    <label for="numeroNFC">Número de Tarjeta NFC:</label>
+                    <input type="text" id="numeroNFC" name="numeroNFC">
+                    <button id="btnEnlazarNFC">Enlazar</button>
+                    <button id="btnCerrarDialogo">Cerrar</button>
+                </div>
+            </div>            
             <div id="bici">
                 <div id="uno">
                     <p>¿Tienes Bicicleta?</p>
@@ -68,10 +77,10 @@
                     <p>CDMX, Mexico</p>
                 </div>
                 <div id="rb">
-                    <p>22:45</p>
+                    <p></p>
                 </div>
-                <div id="ra">
-                    <p>Lunes, Enero 29, 2024</p>
+                <div id="rd">
+                    <p></p>
                 </div>
                 <div id="rc">
                     <input type="hidden" id="tiempo_inicio" value="{{ tiempo_inicio if tiempo_inicio }}">
