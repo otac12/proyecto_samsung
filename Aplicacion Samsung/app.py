@@ -215,6 +215,7 @@ def recibir_alerta():
 def obtener_inicio(data):
     usuario_id = session.get('usuario_id')
     vehiculo = data['vehiculo']
+    carga = data['cargar']
 
     if usuario_id:
         
@@ -233,13 +234,18 @@ def obtener_inicio(data):
         # Guardar el tiempo de inicio en Redis
         redis_client.set(f"contador:{usuario_id}", tiempo_inicio.isoformat())
         redis_client.set('contador_activo:{}'.format(session['usuario_id']), 'true')
+        
+        if carga == 'cargar':
+            valorCarga = 1
+        else:
+            valorCarga = 0
 
         try:
-            # Guardar el tiempo de inicio y el vehículo en la base de datos
+            # Guardar el tiempo de inicio, el vehículo y la carga en la base de datos
             cursor = mysql.connection.cursor(cursorclass=DictCursor)
             cursor.execute(
-                "INSERT INTO servicio (Usuario, Tiempo_inicio, Vehiculo) VALUES (%s, %s, %s)",
-                (usuario_id, tiempo_inicio, vehiculo))
+                "INSERT INTO servicio (Usuario, Tiempo_inicio, Vehiculo, Carga) VALUES (%s, %s, %s, %s)",
+                (usuario_id, tiempo_inicio, vehiculo, valorCarga))
             mysql.connection.commit()
             session['id_servicio'] = cursor.lastrowid
             cursor.close()

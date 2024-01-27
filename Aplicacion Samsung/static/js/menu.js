@@ -130,6 +130,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const botonAlerta = document.getElementById('botonAlerta');
     const rfid = document.getElementById('rfid');
 
+    var imgCargar = document.getElementById('imgCargar');
+    var imgNoCarg = document.getElementById('imgNoCarg');
+
     // Event listener para el botón de inicio
     if (btnIniciar) {
         btnIniciar.addEventListener('click', function() {
@@ -248,6 +251,17 @@ document.addEventListener('DOMContentLoaded', function() {
         btnCargar.addEventListener('click', function() {
             cargar = !cargar;
             this.textContent = cargar ? 'Cargar' : 'No Cargar';
+
+            // Cambiar Imagenes
+            if (cargar) {
+                // Imagen cargando
+                imgCargar.style.display = 'block'; 
+                imgNoCarg.style.display = 'none';
+            } else {
+                // Imagen no cargar
+                imgCargar.style.display = 'none';  
+                imgNoCarg.style.display = 'block';
+            }
         });
     }
 
