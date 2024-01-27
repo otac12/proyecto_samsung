@@ -13,10 +13,10 @@
                 <!--El siguiente div es la muestra para cargar todas las localidades del Scoopark-->
                 <div id="localidad">
                     <p>ScooPark</p>
-                    <p>Estación de estacionamiento de scooters y bicicletas</p>
-                    <img src="../static/img/scooter.svg">
-                    <p id="numero">1/2</p>
-                    <p id="localizacion">Estación de estacionamiento de scooters y bicicletas SP-001 República de Salvador - Pino Suárez </p>
+                    <button></button>
+                </div>
+                <div id="localidad">
+                    <p>ScooPark</p>
                     <button></button>
                 </div>
             </div>
@@ -43,6 +43,20 @@
                 </div>
             </div>
             <div id="costoscooter">
+                <div id="bicia">
+                    <p>SCOOTER</p>
+                </div>
+                <div id="bicib">
+                    <ul>
+                        <li>Acceso a los puertos</li>
+                        <li>Posibilidad de carga</li>
+                        <li>Alerta de intento de robo</li>
+                        <li>Alerta de fin de tiempo</li>
+                    </ul>
+                </div>
+                <div id="bicic">
+                    <p id="mes">150<span>/MES</span></p>
+                </div>
             </div>
         </div>
         <div id="lateral">
@@ -73,6 +87,19 @@
                 </div>
             </div>
             <div id="costobici">
+                <div id="bicia">
+                    <p>BICICLETA</p>
+                </div>
+                <div id="bicib">
+                    <ul>
+                        <li>Acceso a los puertos</li>
+                        <li>Alerta de intento de robo</li>
+                        <li>Alerta de fin de tiempo</li>
+                    </ul>
+                </div>
+                <div id="bicic">
+                    <p id="mes">100<span>/MES</span></p>
+                </div>
             </div>
         </div>
         <div id="reloj">
@@ -116,11 +143,35 @@
                 <div id="puertoa">
                     <p>ScooPark</p>
                 </div>
+                <div id="puertob">
+                    <p>SP-001 República de Salvador -</p>
+                </div>
+                <div id="puertob">
+                    <p>Pino Suarez</p>
+                </div>
+                <div id="puertoc">
+                    <p>A001</p>
+                </div>
+                <div id="puertob">
+                    <p>Tu Puerto</p>
+                </div>
+                <div id="puertod">
+                    <img src="../static/img/Puerto.png">
+                </div>
             </div>
         </div>
     </div>
     <div id="banner">
-        <button onclick="location.href='/logout'">Cerrar Sesión</button>
+        <div id="bannerus">
+            <img src="../static/img/Usuario.png">
+        </div>
+        <div id="bannernom">
+            <p>Oscar Tonaiuh Davila Reyes</p>
+        </div>
+        <div id="medio"></div>
+        <div id="cerrar">
+            <button onclick="location.href='/logout'">Cerrar Sesión</button>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
