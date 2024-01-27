@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let vehiculoSeleccionado = null;
     let cargar = false;
 
+    const URL_ANCLAJE = 'http://10.87.15.80:5000/anclaje';
+
     /* FUNCIONES */
     // Función para manejar la selección del vehículo
     function seleccionarVehiculo(vehiculo) {
@@ -20,14 +22,32 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('scooter').classList.add('activo');
         }
 
+        // Enviar la selección del vehículo al servidor
+        fetch('/seleccionar_vehiculo', {
+            method: 'POST',
+            body: JSON.stringify({ vehiculo: vehiculo }),
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Selección de vehículo guardada:', data);
+        })
+        .catch((error) => {
+            console.error('Error al guardar la selección de vehículo:', error);
+        });
+
         vehiculoSeleccionado = vehiculo;
     }
 
-    // Función para manejar la selección del vehículo
-    function enviarAccion(accion) {
-        fetch('http://10.87.15.80:5000/anclaje', {
+    // Función para manejar la selección
+    function enviarAccion(accion, vehiculo = null) {
+        const payload = vehiculo ? { accion: accion, vehiculo: vehiculo } : { accion: accion };
+    
+        fetch(URL_ANCLAJE, {
             method: 'POST',
-            body: JSON.stringify({ accion: accion }),
+            body: JSON.stringify(payload),
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -142,23 +162,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 enviarAccion('cerrar');
-                
-                if (cargar) {
-                    fetch('http://10.87.15.80:5000/anclaje', {
-                        method: 'POST',
-                        body: JSON.stringify({ vehiculo: vehiculoSeleccionado }),
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Datos enviados:', data);
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                    });
-                }
+
+
+                fetch(URL_ANCLAJE, {
+                    method: 'POST',
+                    body: JSON.stringify({ vehiculo: vehiculoSeleccionado }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Datos enviados:', data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+
 
                 socket.emit('obtener_inicio', { vehiculo: vehiculoSeleccionado, cargar: cargar });
             } else {
@@ -295,6 +315,44 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('botonAlerta').classList.add('boton-alerta-activo');
         }
     });
+
+    // Socket para menejar el botón de inicio
+    socket.on('estado_tarjeta', function(data) {
+        if (data.tarjeta_recibida == true) {
+            if (!contadorActivo) {
+                // Cuando el contardor esta inactivo (no se ha iniciado)
+                if (!vehiculoSeleccionado) {
+                    alert('Por favor, selecciona un vehículo para continuar.');
+                    return;
+                }
+                //enviarAccion('cerrar');
+                
+                if (cargar) {
+                    fetch(URL_ANCLAJE, {
+                        method: 'POST',
+                        body: JSON.stringify({ vehiculo: vehiculoSeleccionado }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Datos enviados:', data);
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+                }
+    
+                socket.emit('obtener_inicio', { vehiculo: vehiculoSeleccionado, cargar: cargar });
+            } else {
+                // Cuando el contador esta activado (dar en finalizar)
+                //enviarAccion('abrir');
+                socket.emit('finalizar_contador');
+            }
+        }
+    });
+    
 
     socket.on('contador_iniciado', function(data) {
         contadorActivo = true;

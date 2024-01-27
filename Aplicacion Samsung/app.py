@@ -7,6 +7,7 @@ from flask_socketio import SocketIO, emit
 from flask_redis import FlaskRedis
 from flask_cors import CORS
 import yaml
+import json
 import re
 
 app = Flask(__name__)
@@ -154,8 +155,18 @@ def enlazar_nfc():
             return jsonify({"estado": "Error", "mensaje": str(e)}), 500
     else:
         return jsonify({"estado": "Error", "mensaje": "Usuario no autenticado"}), 401
+    
+# Obtener el vehiculo
+@app.route('/seleccionar_vehiculo', methods=['POST'])
+def seleccionar_vehiculo():
+    if 'usuario_id' in session:
+        data = request.get_json()
+        session['vehiculo_seleccionado'] = data['vehiculo']
+        return jsonify({"mensaje": "Vehículo seleccionado guardado"})
+    else:
+        return jsonify({"error": "Usuario no autenticado"}), 401
  
-API_TOKEN = '123'    
+API_TOKEN = '123'   
 # Obtener la tarjeta del servidor
 @app.route('/recibir_tarjeta', methods=['POST'])
 def recibir_tarjeta():
@@ -178,13 +189,14 @@ def recibir_tarjeta():
         cursor.execute("SELECT * FROM metodos_pago WHERE no_cuenta = '"+tarjeta_recibida+"'")
         tarjeta_base = cursor.fetchone()
         cursor.close()
-
-        # Verificar si son iguales
-        if tarjeta_base and tarjeta_base['no_cuenta'] == tarjeta_recibida:
-            return jsonify({"validacion": True})
-        else: 
-            return jsonify({"validacion": False})
         
+         # Verificar si son iguales
+        if tarjeta_base and tarjeta_base['no_cuenta'] == tarjeta_recibida:
+            vehiculo_seleccionado = session.get('vehiculo_seleccionado', 'sin selección')
+            return jsonify({"validacion": True, "vehiculo": vehiculo_seleccionado})
+        else: 
+            vehiculo_seleccionado = session.get('vehiculo_seleccionado', 'sin selección')
+            return jsonify({"validacion": False, "vehiculo": vehiculo_seleccionado})
         
 # Obtener las alertas del servidor
 # ALERTA DE ROBO = 1
@@ -235,7 +247,7 @@ def obtener_inicio(data):
         redis_client.set(f"contador:{usuario_id}", tiempo_inicio.isoformat())
         redis_client.set('contador_activo:{}'.format(session['usuario_id']), 'true')
         
-        if carga == 'cargar':
+        if carga == True:
             valorCarga = 1
         else:
             valorCarga = 0
@@ -279,6 +291,7 @@ def finalizar_contador():
 @socketio.on('cargar_estado_contador')
 def cargar_estado_contador():
     if 'usuario_id' in session:
+        tiempo_actual = datetime.now()
         tiempo_inicio = redis_client.get(f"contador:{session['usuario_id']}")
         if tiempo_inicio:
             emit('actualizar_tiempo', {'tiempo_inicio': tiempo_inicio.decode('utf-8')})
