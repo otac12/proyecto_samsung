@@ -9,36 +9,70 @@ document.addEventListener('DOMContentLoaded', function() {
     let cargar = false;
     const URL_ANCLAJE = 'http://10.87.15.80:5000/anclaje';
 
-    // Event listeners para botones y elementos
+    // Elementos del DOM
     const btnIniciar = document.getElementById('BtnIniciar');
     const btnBici = document.getElementById('bici');
     const btnScooter = document.getElementById('scooter');
-    const btnNFC = document.getElementById('btnNFC'); // Asegúrate de que este ID exista en tu HTML
+    const btnNFC = document.getElementById('btnNFC');
     const btnCargar = document.getElementById('btnCargar');
     const botonAlerta = document.getElementById('botonAlerta');
-    const divAlertaTiempo = document.getElementById('alertaTiempo');
-    const divForsejeo = document.getElementById('alertaForsejeo');
     const rfid = document.getElementById('rfid');
     const imgCargar = document.getElementById('imgCargar');
     const imgNoCarg = document.getElementById('imgNoCarg');
 
-    /*  FUNCIONES PARA MENEJAR EVENTOS  */
+    // Event Listeners
+    btnBici.addEventListener('click', () => seleccionarVehiculo('Bicicleta'));
+    btnScooter.addEventListener('click', () => seleccionarVehiculo('Scooter'));
+    btnNFC.addEventListener('click', enlazarNFCEventHandler);
+    btnCargar.addEventListener('click', cargarEventHandler);
+    botonAlerta.addEventListener('click', desactivarAlerta);
+    rfid.addEventListener('click', mostrarDialogoNFC);
+    btnIniciar.addEventListener('click', iniciarEventHandler);
+
+    /* FUNCIONES PARA MANEJAR EVENTOS*/
+
     // Función para manejar la selección del vehículo
     function seleccionarVehiculo(vehiculo) {
-        document.getElementById('bici').classList.remove('activo');
-        document.getElementById('scooter').classList.remove('activo');
-
-        if (vehiculo === 'Bicicleta') {
-            document.getElementById('bici').classList.add('activo');
-        } else if (vehiculo === 'Scooter') {
-            document.getElementById('scooter').classList.add('activo');
-        }
+        btnBici.classList.remove('activo');
+        btnScooter.classList.remove('activo');
+        document.getElementById(vehiculo === 'Bicicleta' ? 'bici' : 'scooter').classList.add('activo');
         vehiculoSeleccionado = vehiculo;
-        // Enviar la selección del vehículo al servidor
         enviarSeleccionVehiculo(vehiculo);
     }
 
-    /*      FUNCIÓN DE PETICIONES AL SERVIDOR       */
+    // Función para enlzar la terjata NFC al usuario
+    function enlazarNFCEventHandler() {
+        const numeroNFC = document.getElementById('numero-nfc').value.trim();
+        if (numeroNFC === '') {
+            alert('Por favor, ingresa el número de la tarjeta NFC.');
+            return;
+        }
+        enlazarNFC(numeroNFC);
+    }
+
+    // Función para el botón de cargar
+    function cargarEventHandler() {
+        cargar = !cargar;
+        actualizarEstadoCargaImagen();
+        if (contadorActivo) enviarEstadoCarga(cargar);
+    }
+
+    // Función para el botón de Inicio/Finalizar
+    function iniciarEventHandler() {
+        if (!contadorActivo) {
+            if (!vehiculoSeleccionado) {
+                alert('Por favor, selecciona un vehículo para continuar.');
+                return;
+            }
+            enviarAccion('cerrar', vehiculoSeleccionado, cargar);
+            socket.emit('obtener_inicio', { vehiculo: vehiculoSeleccionado, cargar: cargar });
+        } else {
+            enviarAccion('abrir', vehiculoSeleccionado, cargar);
+            socket.emit('finalizar_contador');
+        }
+    }
+
+    /*  FUNCIÓN DE PETICIONES AL SERVIDOR   **/
     // Función para enviar el vehiculo al Servidor Web y que se lo mande a la Raspberry
     function enviarSeleccionVehiculo(vehiculo) {
         fetch('/seleccionar_vehiculo', {
@@ -93,17 +127,15 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => console.error('Error al enviar estado de carga:', error));
     }
 
-    /*      OTRAS FUNCIONES     */
-
-    // Función para mostrar el cuadro de diálogo NFC
-    function mostrarDialogoNFC() {
-        document.getElementById('dialogoNFC').classList.add('dialogo-visible');
-    }
-
     // Cambiar la la Imagen dependiendo de el botón de carga
     function actualizarEstadoCargaImagen() {
         imgCargar.style.display = cargar ? 'block' : 'none';
         imgNoCarg.style.display = cargar ? 'none' : 'block';
+    }
+
+    // Función para mostrar el cuadro de diálogo NFC
+    function mostrarDialogoNFC() {
+        document.getElementById('dialogoNFC').classList.add('dialogo-visible');
     }
 
     // Función para desactivar la alerta visual
@@ -140,35 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('ca').textContent = horas < 10 ? "0" + horas : horas;
         document.getElementById('cd').textContent = minutos < 10 ? "0" + minutos : minutos;
         document.getElementById('cg').textContent = segundos < 10 ? "0" + segundos : segundos;
-        
-        // Ver cuando el contador llegue antes de los minutos. 
-        if (horas === 0 && minutos === 1 && segundos === 50) {
-            activarAlertaTiempo();
-        } else if (minutos > 1 || (minutos === 2 && segundos > 0)) {
-            cambiarColorContador(true);
-        }
-    }
-
-    // Activar alerta de tiempo
-    function activarAlertaTiempo() {
-        divAlertaTiempo.classList.add('parpadeo', 'boton-activo');
-        divAlertaTiempo.addEventListener('click', desactivarAlertaTiempo);
-    }
-    
-    // Desactivar alerta de tiempo
-    function desactivarAlertaTiempo() {
-        divAlertaTiempo.classList.remove('parpadeo', 'boton-activo');
-        divAlertaTiempo.removeEventListener('click', desactivarAlertaTiempo);
-    }
-
-    // Cambiar color del contador
-    function cambiarColorContador(activo) {
-        const elementosContador = document.querySelectorAll('#contador p');
-        if (activo) {
-            elementosContador.forEach(elemento => elemento.classList.add('contador-rojo'));
-        } else {
-            elementosContador.forEach(elemento => elemento.classList.remove('contador-rojo'));
-        }
     }
 
     // Función para resetear el contador a su estado inicial
@@ -194,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Por favor, selecciona un vehículo para continuar.');
                     return;
                 }
+
                 // Enviar la acción y el estado de carga al servidor
                 enviarAccion('cerrar', vehiculoSeleccionado, cargar);
 
@@ -201,10 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 enviarAccion('abrir', vehiculoSeleccionado, cargar);
                 socket.emit('finalizar_contador');
-                cambiarColorContador(false);
-                if (divAlertaTiempo.classList.contains('parpadeo')) {
-                    desactivarAlertaTiempo(); // Desactivar alerta de tiempo si está activa
-                }
             }
         });
     }
@@ -254,11 +254,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Función para que parpade le alerta de Forsejeo
     function activarAlertaForsejeo() {
+        const divForsejeo = document.getElementById('alertaForsejeo');
         divForsejeo.classList.add('parpadeo');
     }
 
     // Función para desactivar la alerta de Forsejeo
     function desactivarAlertaForsejeo() {
+        const divForsejeo = document.getElementById('alertaForsejeo');
         divForsejeo.classList.remove('parpadeo');
     }
 
@@ -317,15 +319,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Socket listeners para manejar eventos del servidor
+    socket.on('alerta_recibida', function(data) {
+        if (data.alerta === 1) {
+            document.getElementById('botonAlerta').classList.remove('boton-alerta-inactivo');
+            document.getElementById('botonAlerta').classList.add('boton-alerta-activo');
+        }
+    });
+
     // Socket para menejar el botón de inicio cuando se utiliza la tarjeta
     socket.on('accion_tarjeta', function(data){
         if (data.accion == 'abrir'){
             if (contadorActivo){
                 socket.emit('finalizar_contador');
-                cambiarColorContador(false);
-                if (divAlertaTiempo.classList.contains('parpadeo')) {
-                    desactivarAlertaTiempo(); // Desactivar alerta de tiempo si está activa
-                }
             }
         } else if (data.accion == 'cerrar'){
             if (!contadorActivo) {
@@ -347,15 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-    });
-
-    // Socket listeners para manejar eventos del servidor
-    socket.on('alerta_recibida', function(data) {
-        if (data.alerta === 1) {
-            document.getElementById('botonAlerta').classList.remove('boton-alerta-inactivo');
-            document.getElementById('botonAlerta').classList.add('boton-alerta-activo');
-        }
-    }); 
+    });   
 
     socket.on('contador_iniciado', function(data) {
         contadorActivo = true;

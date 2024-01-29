@@ -41,8 +41,15 @@ def index():
 @app.route('/main')
 def principal():
     if 'usuario_id' in session:
+        # Obtener el nombre del usuario de la base de datos
+        cursor = mysql.connection.cursor(cursorclass=DictCursor)
+        cursor.execute("SELECT Nombre FROM usuario WHERE ID = %s", (session['usuario_id'],))
+        usuario = cursor.fetchone()
+        cursor.close()
+
         tiempo_inicio = redis_client.get(f"contador:{session['usuario_id']}")
-        return render_template('menu.html', tiempo_inicio=tiempo_inicio.decode('utf-8') if tiempo_inicio else None)
+        # Pasar el nombre del usuario a la plantilla
+        return render_template('menu.html', nombre_usuario=usuario['Nombre'], tiempo_inicio=tiempo_inicio.decode('utf-8') if tiempo_inicio else None)
     return redirect('/')
 
 
@@ -203,8 +210,9 @@ def recibir_tarjeta():
 @app.route('/recibir_alertas', methods=['POST'])
 def recibir_alerta():
 
-    datos = request.get().json()
+    datos = request.get_json()
     alerta_recibida = datos['alerta']
+    print("Alerta recibida: %s" % alerta_recibida)
     
     try:
         usuario_id = session['usuario_id']
@@ -215,11 +223,31 @@ def recibir_alerta():
         mysql.connection.commit()
         cursor.close()
         
-        emit('alerta_recibida', {'alerta': alerta_recibida}, broadcast=True)
+        emit_to_web('alerta_recibida', {'alerta': alerta_recibida}, broadcast=True)
         
         return jsonify({"estado":  "Alerta guardada"})
     except Exception as e:
         return jsonify({"estado": "Error", "mensaje": str(e)}), 500
+    
+# Recibir la acción del servidor cuando se utiliza la tarjeta    
+@app.route('/accion_tarjeta', methods=['POST'])
+def accion_motor():
+    data = request.get_json()
+    accion = data.get('accion')
+    
+    if accion not in ['abrir', 'cerrar']:
+        return jsonify({"estado": "Error", "mensaje": "Acción no reconocida"}), 400
+    
+    # Enviar al servidor Web
+    emit_to_web('accion_tarjeta', {'accion': accion})
+    
+    # Regresar al servidor de la Rasp
+    return jsonify({"estado": "Éxito"})
+
+# Para enviar mensaje al servidor Web    
+def emit_to_web(event, data, namespace='/'):
+    with app.app_context():
+        socketio.emit(event, data, namespace=namespace)        
           
 
 # Cuando se da inicio se obtiene la hora de inicio y el vehiculo a utilizar
@@ -305,19 +333,6 @@ def estado_contador():
         estado = redis_client.get('contador_activo:{}'.format(session['usuario_id']))
         return jsonify({'contador_activo': bool(estado)})
     return jsonify({'contador_activo': False})
-
-# Saber el estado en el que debe de estar el motor            
-@app.route('/accion_motor', methods=['POST'])
-def accion_motor():
-    accion = request.json.get('accion')
-    if accion == 'abrir':
-        print('Se abre el sistema')
-    elif accion == 'cerrar':
-        print('Se cierra el sistema')
-    else:
-        return jsonify({"estado": "Error", "mensaje": "Acción no reconocida"}), 400
-
-    return jsonify({"estado": "Éxito", "accion": accion})
 
 # Correr el programa
 if __name__ == '__main__':

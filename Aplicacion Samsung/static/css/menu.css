@@ -238,6 +238,16 @@ body{
 
 .parpadeo {
     animation: parpadeo 1s infinite;
+    background: #cbc469;
+}
+
+.contador-rojo {
+    color: red;
+}
+
+.boton-activo {
+    cursor: pointer;
+    text-decoration: underline;
 }
 
 #scooter{
