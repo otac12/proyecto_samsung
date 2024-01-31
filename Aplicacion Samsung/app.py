@@ -33,8 +33,6 @@ mysql = MySQL(app)
 #Iniciar en la página de login si esta iniciada la sesión mandar a la principal
 @app.route('/')
 def index():
-    if 'usuario_id' in session:
-        return redirect('/main')
     return render_template('login.html')
 
 # Página principal
@@ -163,6 +161,19 @@ def enlazar_nfc():
     else:
         return jsonify({"estado": "Error", "mensaje": "Usuario no autenticado"}), 401
     
+# Comprobar si ya hay una terjeta NFC enlazada
+@app.route('/verificar_nfc')
+def verificar_nfc():
+    if 'usuario_id' in session:
+        usuario_id = session['usuario_id']
+        cursor = mysql.connection.cursor(cursorclass=DictCursor)
+        cursor.execute("SELECT * FROM metodos_pago WHERE ID = %s AND Metodo_pago = 'tarjeta'", (usuario_id,))
+        tarjeta = cursor.fetchone()
+        cursor.close()
+        return jsonify({'tarjetaNFCVinculada': bool(tarjeta)})
+    else:
+        return jsonify({'error': 'Usuario no autenticado'}), 401
+    
 # Obtener el vehiculo
 @app.route('/seleccionar_vehiculo', methods=['POST'])
 def seleccionar_vehiculo():
@@ -212,7 +223,7 @@ def recibir_alerta():
 
     datos = request.get_json()
     alerta_recibida = datos['alerta']
-    print("Alerta recibida: %s" % alerta_recibida)
+    print("Alerta recibida: %i" % alerta_recibida)
     
     try:
         usuario_id = session['usuario_id']
@@ -229,17 +240,40 @@ def recibir_alerta():
     except Exception as e:
         return jsonify({"estado": "Error", "mensaje": str(e)}), 500
     
+# Recibir inicio del servidor Raspbery
+@app.route('/accion_inicio', methods=['POST'])
+def accion_Inicio():
+    data = request.get_json()
+    status = data.get('status')
+    
+    print("Se recibió la acción: %s" % status)
+    
+    if status not in ['cerrado']:
+        return jsonify({"estado": "Error", "mensaje": "Acción no reconocida"}), 400
+    
+    # Enviar al servidor Web
+    emit_to_web('accion_inicio', {'status': status})
+    
+    # Regresar al servidor de la Rasp
+    return jsonify({"estado": "Éxito"})
+
+# Para enviar mensaje al servidor Web    
+def emit_to_web(event, data, namespace='/'):
+    with app.app_context():
+        socketio.emit(event, data, namespace=namespace)  
+            
 # Recibir la acción del servidor cuando se utiliza la tarjeta    
 @app.route('/accion_tarjeta', methods=['POST'])
 def accion_motor():
     data = request.get_json()
-    accion = data.get('accion')
+    status = data.get('status')
+    print("Mensaje: %s" % status)
     
-    if accion not in ['abrir', 'cerrar']:
+    if status not in ['cerrado']:
         return jsonify({"estado": "Error", "mensaje": "Acción no reconocida"}), 400
     
     # Enviar al servidor Web
-    emit_to_web('accion_tarjeta', {'accion': accion})
+    emit_to_web('accion_tarjeta', {'status': status})
     
     # Regresar al servidor de la Rasp
     return jsonify({"estado": "Éxito"})

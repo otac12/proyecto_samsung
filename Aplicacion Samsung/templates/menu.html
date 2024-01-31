@@ -4,6 +4,7 @@
     <title>Menú</title>
     <link rel="stylesheet" href="../static/css/menu.css" type="text/css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <div id="dashboard">
@@ -92,8 +93,8 @@
             </div>
             <div id="dialogoNFC" class="dialogo-oculto">
                 <div class="contenido-dialogo">
-                    <h2>Enlazar Tarjeta NFC</h2>
-                    <label for="numeroNFC">Número de Tarjeta NFC:</label>
+                    <h2>Enlazar Tarjeta RFID</h2>
+                    <label for="numeroNFC">Número de Tarjeta RFID:</label>
                     <input type="text" id="numeroNFC" name="numeroNFC">
                     <button id="btnEnlazarNFC">Enlazar</button>
                     <button id="btnCerrarDialogo">Cerrar</button>
@@ -165,16 +166,16 @@
                 <div id="puertoa">
                     <p>ScooPark</p>
                 </div>
-                <div id="puertob">
-                    <p>SP-001 República de Salvador -</p>
+                <div class="puertob" id="puertoLocalizacion">
+                    <p>SP</p>
                 </div>
-                <div id="puertob">
-                    <p>Pino Suarez</p>
+                <div class="puertob" id="puertoLocalizacion2">
+                    <p></p>
                 </div>
                 <div id="puertoc">
-                    <p>A001</p>
+                    <p>-</p>
                 </div>
-                <div id="puertob">
+                <div class="puertob">
                     <p>Tu Puerto</p>
                 </div>
                 <div id="puertod">
